@@ -1,0 +1,41 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# pnpm store
+.pnpm-store/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+
+# Build output
+dist/
+build/
+.env
+.env.local
+.env.*.local
+.turbo
+.next/
+out/
+build
+dist
+coverage
+.vercel
+*.pem
+.DS_Store
+npm-debug.log*
