@@ -44,8 +44,6 @@ app.get("/openapi.json", (req, res) => {
 logger.debug(`docs: ${env.BASE_URL}/docs`);
 app.use("/docs", apiReference({ url: "/openapi.json" }));
 
-app.use("/docs", apiReference({ url: "/openapi.json" }));
-
 app.use(
   "/api",
   createOpenApiExpressMiddleware({
