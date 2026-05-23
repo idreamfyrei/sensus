@@ -1,0 +1,23 @@
+{
+  "name": "@repo/auth",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./auth.ts",
+  "types": "./auth.ts",
+  "exports": {
+    ".": "./auth.ts",
+    "./client": "./client.ts"
+  },
+  "scripts": {
+    "auth:generate": "better-auth generate --config ./auth.ts --output ../../packages/database/auth-schema.ts -y"
+  },
+  "dependencies": {
+    "@repo/database": "workspace:*",
+    "better-auth": "^1.0.0"
+  },
+  "devDependencies": {
+    "@better-auth/cli": "^1.0.0",
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "^5.9.3"
+  }
+}
