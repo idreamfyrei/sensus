@@ -52,3 +52,6 @@ export const fieldConditionsTable = pgTable(
     formSourceIdx: index("field_conditions_form_source_idx").on(table.formId, table.sourceFieldId),
   }),
 );
+
+export type SelectFieldCondition = typeof fieldConditionsTable.$inferSelect;
+export type InsertFieldCondition = typeof fieldConditionsTable.$inferInsert;
