@@ -1,24 +1,56 @@
 name: CI
-on: { push: { branches: [main] }, pull_request: {} }
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+
 jobs:
   verify:
     runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:15
-        env: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres, POSTGRES_DB: sensus }
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sensus
         ports: ["5432:5432"]
         options: >-
-          --health-cmd pg_isready --health-interval 10s
-          --health-timeout 5s --health-retries 5
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
+      # Main DB — required because @repo/database/index.ts eagerly creates a
+      # pool from this URL at module load (no actual queries happen against it
+      # in CI; the test DB below is what the invariant tests hit).
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sensus
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sensus_test
+
+      # Better Auth needs a secret to instantiate, even in tests.
+      BETTER_AUTH_SECRET: ci-only-dummy-secret-not-used-for-real-auth
+      BETTER_AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_AUTH_URL: http://localhost:3000
+
+      # Other env that workspaces touch at module load.
       NEXT_PUBLIC_API_URL: http://localhost:8000/trpc
+      NODE_ENV: development
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Create test database
+        run: PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE sensus_test;"
+
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm check-types

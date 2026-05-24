@@ -1,7 +1,22 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalEnv": ["SKIP_ENV_VALIDATION"],
+  "globalEnv": [
+    "SKIP_ENV_VALIDATION",
+    "NODE_ENV",
+    "DATABASE_URL",
+    "TEST_DATABASE_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "NEXT_PUBLIC_AUTH_URL",
+    "NEXT_PUBLIC_API_URL",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "CLOUDINARY_URL",
+    "PORT",
+    "BASE_URL",
+    "LOGGER_LEVEL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
