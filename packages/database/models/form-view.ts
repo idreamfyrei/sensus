@@ -1,8 +1,8 @@
 import { pgTable, uuid, text, timestamp, index } from "drizzle-orm/pg-core";
 import { formsTable } from "./form";
 
-export const responsesTable = pgTable(
-  "responses",
+export const formViewsTable = pgTable(
+  "form_views",
   {
     id: uuid("id").primaryKey().defaultRandom(),
 
@@ -10,7 +10,7 @@ export const responsesTable = pgTable(
       .notNull()
       .references(() => formsTable.id, { onDelete: "restrict" }),
 
-    submittedAt: timestamp("submitted_at").notNull().defaultNow(),
+    viewedAt: timestamp("viewed_at").notNull().defaultNow(),
 
     ipHash: text("ip_hash"),
     userAgent: text("user_agent"),
@@ -19,9 +19,9 @@ export const responsesTable = pgTable(
     deletedAt: timestamp("deleted_at"),
   },
   (table) => ({
-    formSubmittedIdx: index("responses_form_submitted_idx").on(table.formId, table.submittedAt),
+    formViewedIdx: index("form_views_form_viewed_idx").on(table.formId, table.viewedAt),
   }),
 );
 
-export type SelectResponse = typeof responsesTable.$inferSelect;
-export type InsertResponse = typeof responsesTable.$inferInsert;
+export type SelectFormView = typeof formViewsTable.$inferSelect;
+export type InsertFormView = typeof formViewsTable.$inferInsert;

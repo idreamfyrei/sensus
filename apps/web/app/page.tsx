@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   let status = "unavailable";
   try {
-    const res = await api.health.getHealth.query();
-    status = res.status;
+    const result = await api.health.getHealth.query();
+    status = result.status;
   } catch {}
   return (
     <main className="min-h-screen min-w-screen flex justify-center items-center">

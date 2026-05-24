@@ -1,16 +1,7 @@
-import {
-  pgTable,
-  uuid,
-  text,
-  integer,
-  boolean,
-  timestamp,
-  pgEnum,
-  index,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { formFieldsTable } from "./form-field";
 
-export const fieldOptionTable = pgTable(
+export const fieldOptionsTable = pgTable(
   "field_options",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -35,5 +26,5 @@ export const fieldOptionTable = pgTable(
   }),
 );
 
-export type SelectFieldOption = typeof fieldOptionTable.$inferSelect;
-export type InsertFieldOption = typeof fieldOptionTable.$inferInsert;
+export type SelectFieldOption = typeof fieldOptionsTable.$inferSelect;
+export type InsertFieldOption = typeof fieldOptionsTable.$inferInsert;

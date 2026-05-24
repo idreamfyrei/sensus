@@ -32,8 +32,6 @@ export const themesTable = pgTable("themes", {
   fontHeading: text("font_heading").notNull(),
   fontBody: text("font_body").notNull(),
 
-  // jsonb: flexible column to store additional theme properties or variations
-  // like: effects = { scanlines: true, glow: 0.4, halftone: false }
   effects: jsonb("effects").notNull().default({}),
 
   isSeeded: boolean("is_seeded").notNull().default(false),
