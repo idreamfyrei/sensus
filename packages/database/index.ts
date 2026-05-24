@@ -8,4 +8,7 @@ export * from "drizzle-orm";
 // Make every table / enum / inferred type importable from `@repo/database`.
 export * from "./schema";
 
+// Soft-delete + query helpers.
+export * from "./helpers";
+
 export default db;
