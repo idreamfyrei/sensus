@@ -2,7 +2,9 @@ import { z } from "zod";
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(8000),
-  NODE_ENV: z.enum(["development", "prod"]).default("development"),
+  // `production` for Next.js / `test` for Vitest / `development` everywhere else.
+  // `prod` retained for backwards compat with anything that already sets it.
+  NODE_ENV: z.enum(["development", "production", "prod", "test"]).default("development"),
   BASE_URL: z.string().default("http://localhost:8000"),
 });
 
