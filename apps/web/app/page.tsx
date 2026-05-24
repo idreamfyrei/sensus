@@ -7,7 +7,9 @@ export default async function Home() {
   try {
     const result = await api.health.getHealth.query();
     status = result.status;
-  } catch {}
+  } catch {
+    // api unreachable; fall through to the "unavailable" fallback above.
+  }
   return (
     <main className="min-h-screen min-w-screen flex justify-center items-center">
       <div>

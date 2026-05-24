@@ -34,3 +34,7 @@ coverage
 # Misc
 .DS_Store
 *.pem
+
+# Claude Code local artifacts
+.claude/
+skills/
