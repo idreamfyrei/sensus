@@ -30,7 +30,6 @@ export const formsTable = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
 
-    // text — Better Auth issues text IDs for user rows.
     userId: text("user_id")
       .notNull()
       .references(() => userTable.id, { onDelete: "restrict" }),

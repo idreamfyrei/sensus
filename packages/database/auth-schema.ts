@@ -7,7 +7,6 @@ export const user = pgTable(
     id: text("id").primaryKey(),
     name: text("name").notNull(),
 
-    // TWEAK: drop `.unique()`; uniqueness moved to partial index below.
     email: text("email").notNull(),
 
     emailVerified: boolean("email_verified").default(false).notNull(),

@@ -21,15 +21,6 @@ export const conditionActionEnum = pgEnum("condition_action", [
   "jump_to",
 ]);
 
-/**
- * Conditional logic between fields.
- *
- * A condition fires when `(sourceField, operator, value)` evaluates true and
- * applies `action` to a target. The target is **either a field OR a section** —
- * stored as two nullable FK columns plus a CHECK constraint that physically
- * forbids "both null" or "both set". This replaces the older single `targetId`
- * + `targetType` enum design, moving the invariant from app code to the DB.
- */
 export const fieldConditionsTable = pgTable(
   "field_conditions",
   {
