@@ -5,8 +5,8 @@ import { z } from "zod";
 export const inviteBatchSchema = createSelectSchema(inviteBatchesTable);
 
 export const createInviteBatchInput = createInsertSchema(inviteBatchesTable, {
-  originalFilename: (s) => s.min(1).max(500),
-  cloudinaryUrl: (s) => s.url(),
+  originalFilename: z.string().min(1).max(500),
+  cloudinaryUrl: z.string().url(),
 }).pick({
   formId: true,
   cloudinaryUrl: true,

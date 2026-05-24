@@ -3,8 +3,12 @@ import { createFormInput, setFormSlugInput } from "./form";
 import { createFieldConditionInput } from "./field-condition";
 import { createResponseAnswerInput } from "./response-answer";
 
-const SAMPLE_UUID = "11111111-1111-1111-1111-111111111111";
-const OTHER_UUID = "22222222-2222-2222-2222-222222222222";
+// Zod 4 / drizzle-zod's uuid() validator is strict (v1–v8). Position 13 must
+// be the version (1–8) and position 17 must be the variant (8/9/a/b). These
+// fixtures are v4-shaped.
+const SAMPLE_UUID = "11111111-1111-4111-8111-111111111111";
+const OTHER_UUID = "22222222-2222-4222-8222-222222222222";
+const THIRD_UUID = "33333333-3333-4333-8333-333333333333";
 
 describe("createFormInput", () => {
   const validBase = {
@@ -77,7 +81,7 @@ describe("createFieldConditionInput — target XOR refine", () => {
       createFieldConditionInput.safeParse({
         ...base,
         targetFieldId: SAMPLE_UUID,
-        targetSectionId: OTHER_UUID,
+        targetSectionId: THIRD_UUID,
       }).success,
     ).toBe(false);
   });

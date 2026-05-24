@@ -10,7 +10,7 @@ export const formInviteSchema = createSelectSchema(formInvitesTable);
  * doesn't expose tokenHash.
  */
 export const createFormInviteInput = createInsertSchema(formInvitesTable, {
-  email: (s) => s.email(),
+  email: z.string().email(),
 }).pick({
   formId: true,
   batchId: true,

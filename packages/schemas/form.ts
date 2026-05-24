@@ -1,11 +1,11 @@
-import { createSelectSchema, createInsertSchema, createUpdateSchema } from "drizzle-zod";
+import { createSelectSchema, createInsertSchema } from "drizzle-zod";
 import { formsTable } from "@repo/database";
 import { z } from "zod";
 
 export const formSchema = createSelectSchema(formsTable);
 
 export const createFormInput = createInsertSchema(formsTable, {
-  title: (s) => s.min(1).max(200),
+  title: z.string().min(1).max(200),
 }).pick({
   title: true,
   description: true,
@@ -14,8 +14,8 @@ export const createFormInput = createInsertSchema(formsTable, {
   layout: true,
 });
 
-export const updateFormInput = createUpdateSchema(formsTable, {
-  title: (s) => s.min(1).max(200),
+export const updateFormInput = createInsertSchema(formsTable, {
+  title: z.string().min(1).max(200),
 })
   .pick({
     title: true,
@@ -29,14 +29,14 @@ export const updateFormInput = createUpdateSchema(formsTable, {
     isTemplate: true,
     oneResponsePerEmail: true,
   })
+  .partial()
   .extend({
     id: z.string().uuid(),
-    // Optimistic-concurrency token — bumped on every write.
     version: z.number().int(),
   });
 
-// Slug edits are gated: only allowed while draft. Enforced server-side; this
-// schema just validates the wire shape.
+// Slug edits are gated to draft-only (enforced server-side); this schema
+// just validates the wire shape.
 export const setFormSlugInput = z.object({
   id: z.string().uuid(),
   version: z.number().int(),

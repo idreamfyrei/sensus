@@ -1,11 +1,11 @@
-import { createSelectSchema, createInsertSchema, createUpdateSchema } from "drizzle-zod";
+import { createSelectSchema, createInsertSchema } from "drizzle-zod";
 import { formFieldsTable } from "@repo/database";
 import { z } from "zod";
 
 export const formFieldSchema = createSelectSchema(formFieldsTable);
 
 export const createFormFieldInput = createInsertSchema(formFieldsTable, {
-  label: (s) => s.min(1).max(200),
+  label: z.string().min(1).max(200),
 }).pick({
   formId: true,
   sectionId: true,
@@ -27,8 +27,8 @@ export const createFormFieldInput = createInsertSchema(formFieldsTable, {
   maxSelected: true,
 });
 
-export const updateFormFieldInput = createUpdateSchema(formFieldsTable, {
-  label: (s) => s.min(1).max(200),
+export const updateFormFieldInput = createInsertSchema(formFieldsTable, {
+  label: z.string().min(1).max(200),
 })
   .pick({
     type: true,
@@ -48,6 +48,7 @@ export const updateFormFieldInput = createUpdateSchema(formFieldsTable, {
     minSelected: true,
     maxSelected: true,
   })
+  .partial()
   .extend({ id: z.string().uuid() });
 
 export type FormField = z.infer<typeof formFieldSchema>;

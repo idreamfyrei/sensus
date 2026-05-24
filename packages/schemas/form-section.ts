@@ -1,4 +1,4 @@
-import { createSelectSchema, createInsertSchema, createUpdateSchema } from "drizzle-zod";
+import { createSelectSchema, createInsertSchema } from "drizzle-zod";
 import { formSectionsTable } from "@repo/database";
 import { z } from "zod";
 
@@ -13,7 +13,7 @@ export const createFormSectionInput = createInsertSchema(formSectionsTable).pick
   showIntroScreen: true,
 });
 
-export const updateFormSectionInput = createUpdateSchema(formSectionsTable)
+export const updateFormSectionInput = createInsertSchema(formSectionsTable)
   .pick({
     order: true,
     title: true,
@@ -21,6 +21,7 @@ export const updateFormSectionInput = createUpdateSchema(formSectionsTable)
     pageBreakBefore: true,
     showIntroScreen: true,
   })
+  .partial()
   .extend({ id: z.string().uuid() });
 
 export type FormSection = z.infer<typeof formSectionSchema>;

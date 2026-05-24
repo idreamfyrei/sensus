@@ -4,4 +4,8 @@ import { env } from "./env";
 
 export const db = drizzle(env.DATABASE_URL);
 export * from "drizzle-orm";
+
+// Make every table / enum / inferred type importable from `@repo/database`.
+export * from "./schema";
+
 export default db;

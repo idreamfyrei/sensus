@@ -1,4 +1,4 @@
-import { createSelectSchema, createInsertSchema, createUpdateSchema } from "drizzle-zod";
+import { createSelectSchema, createInsertSchema } from "drizzle-zod";
 import { fieldConditionsTable } from "@repo/database";
 import { z } from "zod";
 
@@ -30,7 +30,7 @@ export const createFieldConditionInput = createInsertSchema(fieldConditionsTable
   })
   .refine(targetXorRefine, { message: targetXorMessage });
 
-export const updateFieldConditionInput = createUpdateSchema(fieldConditionsTable)
+export const updateFieldConditionInput = createInsertSchema(fieldConditionsTable)
   .pick({
     operator: true,
     value: true,
@@ -38,6 +38,7 @@ export const updateFieldConditionInput = createUpdateSchema(fieldConditionsTable
     targetFieldId: true,
     targetSectionId: true,
   })
+  .partial()
   .extend({ id: z.string().uuid() })
   .refine(targetXorRefine, { message: targetXorMessage });
 
