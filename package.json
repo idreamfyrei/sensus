@@ -5,6 +5,7 @@
     "build": "dotenv -- turbo build",
     "dev": "dotenv -- turbo dev",
     "test": "turbo run test",
+    "test:e2e": "dotenv -- pnpm --filter web test:e2e",
     "db:generate": "dotenv -- turbo db:generate",
     "db:migrate": "dotenv -- turbo db:migrate",
     "db:seed-dev": "dotenv -- turbo db:seed-dev",

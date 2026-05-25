@@ -14,7 +14,9 @@
     "CLOUDINARY_URL",
     "PORT",
     "BASE_URL",
-    "LOGGER_LEVEL"
+    "LOGGER_LEVEL",
+    "WEB_ORIGIN",
+    "CI"
   ],
   "tasks": {
     "build": {
