@@ -8,8 +8,17 @@ import {
   type Database,
 } from "@repo/database";
 import { logger } from "@repo/logger";
-import type { Form } from "@repo/schemas";
 import { generateSlug } from "./slug";
+
+/**
+ * The form row shape as the service hands it out. We use drizzle's native
+ * `$inferSelect` here instead of `Form` from @repo/schemas because the
+ * latter goes through drizzle-zod 0.7 + Zod 4, which produces a polluted
+ * union for pgEnum columns (sneaks in numeric indices + array-prototype
+ * methods). Drizzle's native infer is clean and flows correctly through
+ * tRPC → ServerRouter → frontend.
+ */
+type Form = typeof formsTable.$inferSelect;
 
 /**
  * Phase 2 create input. Intentionally narrower than @repo/schemas's
