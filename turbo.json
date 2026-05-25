@@ -34,6 +34,9 @@
     },
     "db:generate": {},
     "db:migrate": {},
+    "db:seed-dev": {
+      "cache": false
+    },
     "test": {
       "dependsOn": ["^test"]
     }

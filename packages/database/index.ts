@@ -15,4 +15,7 @@ export * from "./schema";
 
 export * from "./helpers";
 
+// Phase 2 dev identity — deleted in Phase 3 once Better Auth lands.
+export * from "./dev-constants";
+
 export default db;

@@ -1,4 +1,4 @@
-import { db, type Database } from "@repo/database";
+import { db, DEV_USER_ID, type Database } from "@repo/database";
 import { FormService } from "@repo/services";
 
 /**
@@ -23,19 +23,14 @@ export type Context = {
 };
 
 /**
- * Phase 2: a single seeded user owns every form. The dev seed script
- * (lands in 2.4) ensures this row exists in the DB before any request.
- */
-const HARDCODED_PHASE_2_USER_ID = "user_dev_phase2";
-
-/**
  * Build the per-request context. Currently doesn't need the Express
- * `req`/`res` since auth is hardcoded; Phase 3 will read the session
- * cookie from `req.headers`.
+ * `req`/`res` since auth is hardcoded to `DEV_USER_ID` (seeded by
+ * `pnpm db:seed-dev`). Phase 3 will read the session cookie from
+ * `req.headers` and look up the real userId.
  */
 export async function createContext(): Promise<Context> {
   return {
-    userId: HARDCODED_PHASE_2_USER_ID,
+    userId: DEV_USER_ID,
     db,
     services: {
       forms: new FormService(db),
