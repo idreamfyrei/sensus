@@ -13,7 +13,6 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
 import { and, eq } from "drizzle-orm";
 import type { Pool } from "pg";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import {
   themesTable,
@@ -27,7 +26,11 @@ import {
 
 import { createTestDb, setupTestDb, cleanTestDb } from "../test-utils";
 
-let db: NodePgDatabase;
+// Anchor the test db type at what createTestDb actually returns so the
+// `& { $client: Pool }` brand carries through.
+type TestDb = ReturnType<typeof createTestDb>["db"];
+
+let db: TestDb;
 let pool: Pool;
 
 const TEST_USER = {

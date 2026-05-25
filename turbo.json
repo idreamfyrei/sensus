@@ -34,6 +34,8 @@
     },
     "db:generate": {},
     "db:migrate": {},
-    "test": {}
+    "test": {
+      "dependsOn": ["^test"]
+    }
   }
 }

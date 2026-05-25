@@ -1,3 +1,10 @@
 {
-  "extends": ["@repo/typescript-config/node.json"]
+  "extends": "@repo/typescript-config/node.json",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -11,7 +11,7 @@ export const themeKeyEnum = pgEnum("theme_key", [
   "museum",
   "vaporwave",
   "nature_minimal",
-  "anime",
+  "zen",
 ]);
 
 export const themesTable = pgTable("themes", {
