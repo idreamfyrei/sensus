@@ -465,6 +465,12 @@ importers:
 
   packages/trpc:
     dependencies:
+      "@repo/database":
+        specifier: workspace:*
+        version: link:../database
+      "@repo/services":
+        specifier: workspace:*
+        version: link:../services
       "@trpc/client":
         specifier: ^11.8.1
         version: 11.8.1(@trpc/server@11.8.1(typescript@5.9.3))(typescript@5.9.3)
