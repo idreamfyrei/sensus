@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { FIELD_TYPES_CATALOG } from "@repo/schemas/fields";
 import { trpc } from "~/trpc/client";
-import { AddFieldSection } from "~/components/builder/add-field-section";
-import { FieldCard } from "~/components/builder/field-card";
+import { LayoutToggle } from "~/components/builder/layout-toggle";
+import { SectionsList } from "~/components/builder/sections-list";
 import { ThemePicker } from "~/components/builder/theme-picker";
 
 export default function EditFormPage() {
@@ -57,7 +56,6 @@ export default function EditFormPage() {
   const publicUrl =
     typeof window !== "undefined" ? `${window.location.origin}/f/${formData.slug}` : "";
 
-  const section = formData.sections[0];
   const currentTheme = themes.data?.find((t) => t.id === formData.themeId);
   const currentThemeLabel = currentTheme?.name ?? "Default";
 
@@ -80,30 +78,44 @@ export default function EditFormPage() {
             <h1 className="text-3xl font-semibold truncate">{formData.title}</h1>
             <p className="text-sm text-neutral-500 mt-1 font-mono">
               status: <span className="text-neutral-900">{formData.status}</span> · version:{" "}
-              <span className="text-neutral-900">{formData.version}</span>
+              <span className="text-neutral-900">{formData.version}</span> · layout:{" "}
+              <span className="text-neutral-900">{formData.layout}</span>
             </p>
           </div>
 
-          {!isPublished ? (
-            <button
-              type="button"
-              onClick={() => publish.mutate({ id: formData.id, version: formData.version })}
-              disabled={publish.isPending}
-              className="px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition whitespace-nowrap"
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <Link
+              href={`/dashboard/forms/${formData.id}/preview`}
+              target="_blank"
+              className="px-4 py-2 border border-neutral-300 rounded-md font-medium hover:bg-neutral-50 transition text-sm"
             >
-              {publish.isPending ? "Publishing…" : "Publish"}
-            </button>
-          ) : (
-            <span className="px-3 py-1.5 bg-green-100 text-green-700 rounded font-medium text-sm">
-              ✓ Published
-            </span>
-          )}
+              Preview
+            </Link>
+            {!isPublished ? (
+              <button
+                type="button"
+                onClick={() => publish.mutate({ id: formData.id, version: formData.version })}
+                disabled={publish.isPending}
+                className="px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {publish.isPending ? "Publishing…" : "Publish"}
+              </button>
+            ) : (
+              <span className="px-3 py-1.5 bg-green-100 text-green-700 rounded font-medium text-sm">
+                ✓ Published
+              </span>
+            )}
+          </div>
         </header>
 
         {publish.error && (
           <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
             {publish.error.message}
           </div>
+        )}
+
+        {!isPublished && (
+          <LayoutToggle formId={formData.id} layout={formData.layout} version={formData.version} />
         )}
 
         <section className="flex items-center justify-between p-4 bg-white border border-neutral-200 rounded-lg">
@@ -159,31 +171,7 @@ export default function EditFormPage() {
           </section>
         )}
 
-        <section className="space-y-3">
-          <h2 className="font-medium">Fields</h2>
-
-          {section && section.fields.length === 0 && (
-            <div className="text-center py-12 border-2 border-dashed border-neutral-200 rounded-lg">
-              <p className="text-sm text-neutral-500">
-                {isPublished
-                  ? "No fields. Respondents see only the title and Submit."
-                  : "No fields yet. Click below to add one."}
-              </p>
-            </div>
-          )}
-
-          {section?.fields.map((field) => (
-            <FieldCard
-              key={field.id}
-              field={field}
-              hasOptions={FIELD_TYPES_CATALOG[field.type].hasOptions}
-            />
-          ))}
-
-          {section && !isPublished && (
-            <AddFieldSection formId={formData.id} sectionId={section.id} />
-          )}
-        </section>
+        <SectionsList form={formData} disabled={isPublished} />
       </div>
     </main>
   );

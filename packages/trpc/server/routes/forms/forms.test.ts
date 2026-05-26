@@ -17,7 +17,14 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { eq, themesTable, user as userTable, type Pool } from "@repo/database";
 import { createTestDb, setupTestDb, cleanTestDb } from "@repo/database/test-utils";
-import { AccountService, FieldService, FormService, ThemeService } from "@repo/services";
+import {
+  AccountService,
+  ConditionService,
+  FieldService,
+  FormService,
+  SectionService,
+  ThemeService,
+} from "@repo/services";
 import { seedThemes } from "@repo/database/seed-themes";
 
 import { serverRouter } from "../../index";
@@ -82,6 +89,8 @@ function makeCtx(userId: string | null): Context {
       fields: new FieldService(db),
       account: new AccountService(db),
       themes: new ThemeService(db),
+      sections: new SectionService(db),
+      conditions: new ConditionService(db),
     },
   };
 }
@@ -295,5 +304,235 @@ describe("ServerRouter type export", () => {
   it("is a TRPCError type the client can match on", () => {
     // Compile-time check, runtime asserts shape exists.
     expect(typeof TRPCError).toBe("function");
+  });
+});
+
+describe("forms.setLayout", () => {
+  it("updates layout on a draft form and bumps version", async () => {
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const created = await caller.forms.create(validInput());
+
+    const updated = await caller.forms.setLayout({
+      id: created.id,
+      layout: "single_page",
+      version: created.version,
+    });
+    expect(updated.layout).toBe("single_page");
+    expect(updated.version).toBe(created.version + 1);
+  });
+
+  it("maps setLayout on a published form to CONFLICT", async () => {
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const created = await caller.forms.create(validInput());
+    const published = await caller.forms.publish({
+      id: created.id,
+      version: created.version,
+    });
+    await expect(
+      caller.forms.setLayout({
+        id: created.id,
+        layout: "single_page",
+        version: published.version,
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+});
+
+describe("sections router", () => {
+  it("add → update → reorder → delete happy path", async () => {
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const form = await caller.forms.create(validInput());
+    const full = await caller.forms.get({ id: form.id });
+    const firstSectionId = full.sections[0]?.id;
+    if (!firstSectionId) throw new Error("default section missing");
+
+    const second = await caller.sections.add({ formId: form.id });
+    const third = await caller.sections.add({ formId: form.id });
+
+    await caller.sections.update({
+      sectionId: second.id,
+      patch: { title: "Page 2", pageBreakBefore: true },
+    });
+
+    await caller.sections.reorder({
+      formId: form.id,
+      orderedIds: [third.id, firstSectionId, second.id],
+    });
+
+    const after = await caller.forms.get({ id: form.id });
+    expect(after.sections.map((s) => s.id)).toEqual([third.id, firstSectionId, second.id]);
+
+    await caller.sections.delete({ sectionId: third.id });
+    const final = await caller.forms.get({ id: form.id });
+    expect(final.sections).toHaveLength(2);
+  });
+
+  it("delete maps a section-with-fields to CONFLICT", async () => {
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const form = await caller.forms.create(validInput());
+    const second = await caller.sections.add({ formId: form.id });
+    await caller.fields.add({
+      formId: form.id,
+      sectionId: second.id,
+      type: "short_text",
+      label: "Q",
+    });
+    await expect(caller.sections.delete({ sectionId: second.id })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+  });
+
+  it("delete the last section maps to CONFLICT", async () => {
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const form = await caller.forms.create(validInput());
+    const full = await caller.forms.get({ id: form.id });
+    const only = full.sections[0]?.id;
+    if (!only) throw new Error("seed");
+    await expect(caller.sections.delete({ sectionId: only })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+  });
+});
+
+describe("fields.reorderAll", () => {
+  it("moves a field across sections in one mutation", async () => {
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const form = await caller.forms.create(validInput());
+    const first = (await caller.forms.get({ id: form.id })).sections[0]?.id;
+    if (!first) throw new Error("seed");
+    const second = await caller.sections.add({ formId: form.id });
+
+    const f1 = await caller.fields.add({
+      formId: form.id,
+      sectionId: first,
+      type: "short_text",
+      label: "F1",
+    });
+    const f2 = await caller.fields.add({
+      formId: form.id,
+      sectionId: first,
+      type: "short_text",
+      label: "F2",
+    });
+
+    await caller.fields.reorderAll({
+      formId: form.id,
+      sections: [
+        { sectionId: first, fieldIds: [f2.id] },
+        { sectionId: second.id, fieldIds: [f1.id] },
+      ],
+    });
+
+    const after = await caller.forms.get({ id: form.id });
+    const bySection = new Map(after.sections.map((s) => [s.id, s]));
+    expect(bySection.get(first)?.fields.map((f) => f.id)).toEqual([f2.id]);
+    expect(bySection.get(second.id)?.fields.map((f) => f.id)).toEqual([f1.id]);
+  });
+});
+
+describe("conditions router", () => {
+  it("add → update → delete happy path", async () => {
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const form = await caller.forms.create(validInput());
+    const full = await caller.forms.get({ id: form.id });
+    const sectionId = full.sections[0]?.id;
+    if (!sectionId) throw new Error("default section");
+
+    const src = await caller.fields.add({
+      formId: form.id,
+      sectionId,
+      type: "short_text",
+      label: "Source",
+    });
+    const tgt = await caller.fields.add({
+      formId: form.id,
+      sectionId,
+      type: "short_text",
+      label: "Target",
+    });
+
+    const cond = await caller.conditions.add({
+      formId: form.id,
+      sourceFieldId: src.id,
+      operator: "eq",
+      value: "yes",
+      action: "show",
+      targetFieldId: tgt.id,
+      targetSectionId: null,
+    });
+    expect(cond.action).toBe("show");
+
+    const updated = await caller.conditions.update({
+      conditionId: cond.id,
+      patch: { action: "hide", value: "no" },
+    });
+    expect(updated.action).toBe("hide");
+    expect(updated.value).toBe("no");
+
+    await caller.conditions.delete({ conditionId: cond.id });
+
+    const after = await caller.forms.get({ id: form.id });
+    expect(after.conditions).toHaveLength(0);
+  });
+
+  it("maps XOR violation to BAD_REQUEST", async () => {
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const form = await caller.forms.create(validInput());
+    const full = await caller.forms.get({ id: form.id });
+    const sectionId = full.sections[0]?.id;
+    if (!sectionId) throw new Error("default section");
+    const src = await caller.fields.add({
+      formId: form.id,
+      sectionId,
+      type: "short_text",
+      label: "Source",
+    });
+
+    await expect(
+      caller.conditions.add({
+        formId: form.id,
+        sourceFieldId: src.id,
+        operator: "eq",
+        value: "x",
+        action: "show",
+        targetFieldId: null,
+        targetSectionId: null,
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("maps a condition delete on a published form to CONFLICT", async () => {
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const form = await caller.forms.create(validInput());
+    const full = await caller.forms.get({ id: form.id });
+    const sectionId = full.sections[0]?.id;
+    if (!sectionId) throw new Error("default section");
+    const src = await caller.fields.add({
+      formId: form.id,
+      sectionId,
+      type: "short_text",
+      label: "Source",
+    });
+    const tgt = await caller.fields.add({
+      formId: form.id,
+      sectionId,
+      type: "short_text",
+      label: "Target",
+    });
+    const cond = await caller.conditions.add({
+      formId: form.id,
+      sourceFieldId: src.id,
+      operator: "eq",
+      value: "x",
+      action: "show",
+      targetFieldId: tgt.id,
+      targetSectionId: null,
+    });
+    const current = await caller.forms.get({ id: form.id });
+    await caller.forms.publish({ id: form.id, version: current.version });
+
+    await expect(caller.conditions.delete({ conditionId: cond.id })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
   });
 });

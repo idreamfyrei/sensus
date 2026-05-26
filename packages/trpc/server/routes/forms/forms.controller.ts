@@ -22,6 +22,11 @@ export type CreateFormInput = {
 export type GetFormInput = { id: string };
 export type PublishFormInput = { id: string; version: number };
 export type SetThemeInput = { id: string; themeId: string; version: number };
+export type SetLayoutInput = {
+  id: string;
+  layout: "one_per_screen" | "single_page";
+  version: number;
+};
 
 export class FormsController {
   /** Resolve a themeId — either the one the client provided, or the
@@ -78,6 +83,15 @@ export class FormsController {
       id: input.id,
       userId: ctx.userId,
       themeId: input.themeId,
+      version: input.version,
+    });
+  }
+
+  async setLayout(ctx: ProtectedContext, input: SetLayoutInput) {
+    return ctx.services.forms.setLayout({
+      id: input.id,
+      userId: ctx.userId,
+      layout: input.layout,
       version: input.version,
     });
   }

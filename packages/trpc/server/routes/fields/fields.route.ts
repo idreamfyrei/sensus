@@ -38,9 +38,14 @@ const deleteFieldInput = z.object({
   fieldId: z.string().uuid(),
 });
 
-const reorderFieldsInput = z.object({
+const reorderAllFieldsInput = z.object({
   formId: z.string().uuid(),
-  orderedIds: z.array(z.string().uuid()),
+  sections: z.array(
+    z.object({
+      sectionId: z.string().uuid(),
+      fieldIds: z.array(z.string().uuid()),
+    }),
+  ),
 });
 
 const setOptionsInput = z.object({
@@ -70,9 +75,9 @@ export const fieldsRouter = router({
     .input(deleteFieldInput)
     .mutation(({ ctx, input }) => controller.delete(ctx, input)),
 
-  reorder: protectedProcedure
-    .input(reorderFieldsInput)
-    .mutation(({ ctx, input }) => controller.reorder(ctx, input)),
+  reorderAll: protectedProcedure
+    .input(reorderAllFieldsInput)
+    .mutation(({ ctx, input }) => controller.reorderAll(ctx, input)),
 
   setOptions: protectedProcedure
     .input(setOptionsInput)

@@ -32,7 +32,10 @@ export type UpdateFieldInput = {
 
 export type DeleteFieldInput = { fieldId: string };
 
-export type ReorderFieldsInput = { formId: string; orderedIds: string[] };
+export type ReorderAllFieldsInput = {
+  formId: string;
+  sections: ReadonlyArray<{ sectionId: string; fieldIds: ReadonlyArray<string> }>;
+};
 
 export type SetOptionsInput = {
   fieldId: string;
@@ -63,11 +66,11 @@ export class FieldsController {
     return { ok: true };
   }
 
-  async reorder(ctx: ProtectedContext, input: ReorderFieldsInput): Promise<{ ok: true }> {
-    await ctx.services.fields.reorderFields({
+  async reorderAll(ctx: ProtectedContext, input: ReorderAllFieldsInput): Promise<{ ok: true }> {
+    await ctx.services.fields.reorderAllFields({
       formId: input.formId,
       userId: ctx.userId,
-      orderedIds: input.orderedIds,
+      sections: input.sections,
     });
     return { ok: true };
   }

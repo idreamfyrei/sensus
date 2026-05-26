@@ -14,7 +14,7 @@
  *   - Submit only succeeds against a published form.
  */
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
-import { themesTable, user as userTable, type Pool } from "@repo/database";
+import { eq, themesTable, user as userTable, type Pool } from "@repo/database";
 import { createTestDb, setupTestDb, cleanTestDb } from "@repo/database/test-utils";
 
 // The db instance we hand to FormService — same shape `createTestDb` returns.
@@ -387,5 +387,137 @@ describe("FormService.submit", () => {
     await expect(svc.submit({ slug: "nonexistent-xyzabc", answers: [] })).rejects.toThrow(
       FormNotFoundError,
     );
+  });
+});
+
+describe("FormService.submit with conditions", () => {
+  async function setupFormWithTwoFields() {
+    const created = await svc.create({
+      userId: USER_A.id,
+      input: { title: "Conditional", themeId },
+    });
+    const {
+      formsTable: ft,
+      fieldConditionsTable,
+      formSectionsTable: fst,
+      formFieldsTable: fft,
+    } = await import("@repo/database");
+    void ft;
+    const [section] = await db.select().from(fst).where(eq(fst.formId, created.id));
+    if (!section) throw new Error("section seed");
+    const [src] = await db
+      .insert(fft)
+      .values({
+        formId: created.id,
+        sectionId: section.id,
+        type: "short_text",
+        label: "Source",
+        order: 0,
+      })
+      .returning();
+    if (!src) throw new Error("src seed");
+    const [tgt] = await db
+      .insert(fft)
+      .values({
+        formId: created.id,
+        sectionId: section.id,
+        type: "short_text",
+        label: "Target",
+        order: 1,
+      })
+      .returning();
+    if (!tgt) throw new Error("tgt seed");
+    return { form: created, src, tgt, fieldConditionsTable };
+  }
+
+  it("skips hidden fields' answers and ignores their validation", async () => {
+    const { form, src, tgt, fieldConditionsTable } = await setupFormWithTwoFields();
+    await db.insert(fieldConditionsTable).values({
+      formId: form.id,
+      sourceFieldId: src.id,
+      operator: "eq",
+      value: "yes",
+      action: "show",
+      targetFieldId: tgt.id,
+    });
+    await svc.publish({ id: form.id, userId: USER_A.id, version: form.version });
+
+    const result = await svc.submit({
+      slug: form.slug,
+      answers: [
+        { fieldId: src.id, value: "no" },
+        { fieldId: tgt.id, value: "this should be ignored" },
+      ],
+    });
+    expect(result.responseId).toBeDefined();
+
+    const { responseAnswersTable } = await import("@repo/database");
+    const rows = await db
+      .select()
+      .from(responseAnswersTable)
+      .where(eq(responseAnswersTable.responseId, result.responseId));
+    expect(rows.map((r) => r.formFieldId)).toEqual([src.id]);
+  });
+
+  it("enforces dynamic required from a require condition", async () => {
+    const { form, src, tgt, fieldConditionsTable } = await setupFormWithTwoFields();
+    await db.insert(fieldConditionsTable).values({
+      formId: form.id,
+      sourceFieldId: src.id,
+      operator: "not_empty",
+      action: "require",
+      targetFieldId: tgt.id,
+    });
+    await svc.publish({ id: form.id, userId: USER_A.id, version: form.version });
+
+    await expect(
+      svc.submit({
+        slug: form.slug,
+        answers: [{ fieldId: src.id, value: "filled" }],
+      }),
+    ).rejects.toMatchObject({ code: "INVALID_ANSWER" });
+  });
+
+  it("hides a section via section-target condition; section's fields' answers are ignored", async () => {
+    const { form, src, fieldConditionsTable } = await setupFormWithTwoFields();
+    const { formSectionsTable: fst, formFieldsTable: fft } = await import("@repo/database");
+    const [s2] = await db.insert(fst).values({ formId: form.id, order: 1 }).returning();
+    if (!s2) throw new Error("s2 seed");
+    const [tgt2] = await db
+      .insert(fft)
+      .values({
+        formId: form.id,
+        sectionId: s2.id,
+        type: "short_text",
+        label: "Inside hidden section",
+        order: 0,
+      })
+      .returning();
+    if (!tgt2) throw new Error("tgt2 seed");
+
+    await db.insert(fieldConditionsTable).values({
+      formId: form.id,
+      sourceFieldId: src.id,
+      operator: "eq",
+      value: "hide",
+      action: "hide",
+      targetSectionId: s2.id,
+    });
+    await svc.publish({ id: form.id, userId: USER_A.id, version: form.version });
+
+    const result = await svc.submit({
+      slug: form.slug,
+      answers: [
+        { fieldId: src.id, value: "hide" },
+        { fieldId: tgt2.id, value: "this section is hidden" },
+      ],
+    });
+
+    const { responseAnswersTable } = await import("@repo/database");
+    const rows = await db
+      .select()
+      .from(responseAnswersTable)
+      .where(eq(responseAnswersTable.responseId, result.responseId));
+    expect(rows.map((r) => r.formFieldId)).toEqual([src.id]);
   });
 });

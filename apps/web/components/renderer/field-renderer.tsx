@@ -31,11 +31,9 @@ export function FieldRenderer({
       <label className="block">
         <span className="font-medium text-sm">
           {field.label}
-          {field.required && <span className="text-red-600 ml-1">*</span>}
+          {field.required && <span className="sensus-accent ml-1">*</span>}
         </span>
-        {field.description && (
-          <p className="text-xs text-neutral-500 mt-0.5">{field.description}</p>
-        )}
+        {field.description && <p className="sensus-muted text-xs mt-0.5">{field.description}</p>}
       </label>
 
       <Controller

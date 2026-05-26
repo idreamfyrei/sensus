@@ -318,3 +318,100 @@ describe("FormService.getByIdWithSchema", () => {
     expect(enriched.sections[0]?.fields[0]?.options).toHaveLength(2);
   });
 });
+
+describe("FieldService.reorderAllFields", () => {
+  it("moves a field across sections and updates order", async () => {
+    const { form, section } = await makeDraftForm(USER_A.id);
+
+    const [section2] = await db
+      .insert(formSectionsTable)
+      .values({ formId: form.id, order: 1 })
+      .returning();
+    if (!section2) throw new Error("section2 seed failed");
+
+    const f1 = await fieldSvc.addField({
+      formId: form.id,
+      userId: USER_A.id,
+      sectionId: section.id,
+      type: "short_text",
+      label: "F1",
+    });
+    const f2 = await fieldSvc.addField({
+      formId: form.id,
+      userId: USER_A.id,
+      sectionId: section.id,
+      type: "short_text",
+      label: "F2",
+    });
+
+    await fieldSvc.reorderAllFields({
+      formId: form.id,
+      userId: USER_A.id,
+      sections: [
+        { sectionId: section.id, fieldIds: [f2.id] },
+        { sectionId: section2.id, fieldIds: [f1.id] },
+      ],
+    });
+
+    const rows = await db
+      .select({
+        id: formFieldsTable.id,
+        sectionId: formFieldsTable.sectionId,
+        order: formFieldsTable.order,
+      })
+      .from(formFieldsTable)
+      .where(eq(formFieldsTable.formId, form.id));
+
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    expect(byId.get(f1.id)?.sectionId).toBe(section2.id);
+    expect(byId.get(f1.id)?.order).toBe(0);
+    expect(byId.get(f2.id)?.sectionId).toBe(section.id);
+    expect(byId.get(f2.id)?.order).toBe(0);
+  });
+
+  it("rejects a payload that omits a live field", async () => {
+    const { form, section } = await makeDraftForm(USER_A.id);
+    const f1 = await fieldSvc.addField({
+      formId: form.id,
+      userId: USER_A.id,
+      sectionId: section.id,
+      type: "short_text",
+      label: "F1",
+    });
+    await fieldSvc.addField({
+      formId: form.id,
+      userId: USER_A.id,
+      sectionId: section.id,
+      type: "short_text",
+      label: "F2",
+    });
+
+    await expect(
+      fieldSvc.reorderAllFields({
+        formId: form.id,
+        userId: USER_A.id,
+        sections: [{ sectionId: section.id, fieldIds: [f1.id] }],
+      }),
+    ).rejects.toThrow(FieldNotFoundError);
+  });
+
+  it("rejects on a published form", async () => {
+    const { form, section } = await makeDraftForm(USER_A.id);
+    const f1 = await fieldSvc.addField({
+      formId: form.id,
+      userId: USER_A.id,
+      sectionId: section.id,
+      type: "short_text",
+      label: "F1",
+    });
+    await formSvc.publish({ id: form.id, userId: USER_A.id, version: form.version + 1 });
+
+    await expect(
+      fieldSvc.reorderAllFields({
+        formId: form.id,
+        userId: USER_A.id,
+        sections: [{ sectionId: section.id, fieldIds: [f1.id] }],
+      }),
+    ).rejects.toThrow(FormSchemaLockedError);
+  });
+});

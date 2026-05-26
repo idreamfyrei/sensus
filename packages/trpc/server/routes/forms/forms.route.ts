@@ -23,6 +23,12 @@ const setThemeInput = z.object({
   version: z.number().int(),
 });
 
+const setLayoutInput = z.object({
+  id: z.string().uuid(),
+  layout: z.enum(["one_per_screen", "single_page"]),
+  version: z.number().int(),
+});
+
 const controller = new FormsController();
 
 export const formsRouter = router({
@@ -41,4 +47,8 @@ export const formsRouter = router({
   setTheme: protectedProcedure
     .input(setThemeInput)
     .mutation(({ ctx, input }) => controller.setTheme(ctx, input)),
+
+  setLayout: protectedProcedure
+    .input(setLayoutInput)
+    .mutation(({ ctx, input }) => controller.setLayout(ctx, input)),
 });

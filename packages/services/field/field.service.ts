@@ -152,21 +152,39 @@ export class FieldService {
     });
   }
 
-  async reorderFields(args: {
+  async reorderAllFields(args: {
     formId: string;
     userId: string;
-    orderedIds: string[];
+    sections: ReadonlyArray<{ sectionId: string; fieldIds: ReadonlyArray<string> }>;
   }): Promise<void> {
     await this.assertEditable({ formId: args.formId, userId: args.userId });
 
+    const live = await this.db
+      .select({ id: formFieldsTable.id })
+      .from(formFieldsTable)
+      .where(and(eq(formFieldsTable.formId, args.formId), notDeleted(formFieldsTable.deletedAt)));
+    const liveIds = new Set(live.map((r) => r.id));
+
+    const seen = new Set<string>();
+    for (const section of args.sections) {
+      for (const fieldId of section.fieldIds) {
+        if (!liveIds.has(fieldId)) throw new FieldNotFoundError();
+        if (seen.has(fieldId)) throw new FieldNotFoundError();
+        seen.add(fieldId);
+      }
+    }
+    if (seen.size !== liveIds.size) throw new FieldNotFoundError();
+
     await this.db.transaction(async (tx) => {
-      for (let i = 0; i < args.orderedIds.length; i++) {
-        const id = args.orderedIds[i];
-        if (!id) continue;
-        await tx
-          .update(formFieldsTable)
-          .set({ order: i })
-          .where(and(eq(formFieldsTable.id, id), eq(formFieldsTable.formId, args.formId)));
+      for (const section of args.sections) {
+        for (let i = 0; i < section.fieldIds.length; i++) {
+          const fieldId = section.fieldIds[i];
+          if (!fieldId) continue;
+          await tx
+            .update(formFieldsTable)
+            .set({ sectionId: section.sectionId, order: i })
+            .where(and(eq(formFieldsTable.id, fieldId), eq(formFieldsTable.formId, args.formId)));
+        }
       }
       await this.bumpVersion(tx, args.formId);
     });

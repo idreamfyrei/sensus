@@ -2,6 +2,7 @@ import {
   and,
   eq,
   inArray,
+  fieldConditionsTable,
   fieldOptionsTable,
   formFieldsTable,
   formSectionsTable,
@@ -14,14 +15,19 @@ import {
 } from "@repo/database";
 import { logger } from "@repo/logger";
 import { FIELD_TYPES_CATALOG, getFieldTypeDef } from "@repo/schemas";
+import { evaluateConditions } from "../condition/evaluator";
 import { generateSlug } from "./slug";
 
 type Form = typeof formsTable.$inferSelect;
 type FormSection = typeof formSectionsTable.$inferSelect;
 type FormField = typeof formFieldsTable.$inferSelect;
 type FieldOption = typeof fieldOptionsTable.$inferSelect;
+type FieldCondition = typeof fieldConditionsTable.$inferSelect;
+type Theme = typeof themesTable.$inferSelect;
 
 export type FormWithSchema = Form & {
+  theme: Theme;
+  conditions: FieldCondition[];
   sections: Array<
     FormSection & {
       fields: Array<FormField & { options: FieldOption[] }>;
@@ -181,6 +187,30 @@ export class FormService {
     return updated;
   }
 
+  async setLayout(args: {
+    id: string;
+    userId: string;
+    layout: "one_per_screen" | "single_page";
+    version: number;
+  }): Promise<Form> {
+    const existing = await this.getById({ id: args.id, userId: args.userId });
+    if (existing.status !== "draft") throw new FormSchemaLockedError();
+    if (existing.version !== args.version) throw new FormVersionMismatchError();
+
+    const [updated] = await this.db
+      .update(formsTable)
+      .set({ layout: args.layout, version: existing.version + 1 })
+      .where(eq(formsTable.id, args.id))
+      .returning();
+    if (!updated) throw new Error("FormService.setLayout: update returned nothing");
+    logger.info("form layout changed", {
+      id: updated.id,
+      userId: args.userId,
+      layout: args.layout,
+    });
+    return updated;
+  }
+
   async setTheme(args: {
     id: string;
     userId: string;
@@ -232,43 +262,62 @@ export class FormService {
     const form = await this.getBySlugWithSchema({ slug: args.slug });
     if (form.status !== "published") throw new FormNotPublishedError();
 
-    // Build a fast lookup of all fields on the form (with their options).
     const fieldsById = new Map<
       string,
       {
         type: keyof typeof FIELD_TYPES_CATALOG;
         field: (typeof form.sections)[number]["fields"][number];
+        sectionId: string;
       }
     >();
     for (const section of form.sections) {
       for (const f of section.fields) {
-        fieldsById.set(f.id, { type: f.type, field: f });
+        fieldsById.set(f.id, { type: f.type, field: f, sectionId: section.id });
       }
     }
 
-    const submittedByFieldId = new Map<string, unknown>();
-    for (const a of args.answers) submittedByFieldId.set(a.fieldId, a.value);
+    const answersByFieldId: Record<string, unknown> = {};
+    for (const a of args.answers) answersByFieldId[a.fieldId] = a.value;
 
-    // Validate every field on the form (catches missing required + bad shapes).
+    const evaluation = evaluateConditions({
+      conditions: form.conditions,
+      answers: answersByFieldId,
+    });
+
+    const isEmpty = (v: unknown): boolean => {
+      if (v === undefined || v === null) return true;
+      if (typeof v === "string" && v === "") return true;
+      if (Array.isArray(v) && v.length === 0) return true;
+      return false;
+    };
+
     const rowsToInsert: Array<{
       formFieldId: string;
       valueText: string | null;
       valueJson: unknown | null;
     }> = [];
 
-    for (const [fieldId, { field }] of fieldsById) {
+    for (const [fieldId, { field, sectionId }] of fieldsById) {
+      if (evaluation.hiddenFieldIds.has(fieldId)) continue;
+      if (evaluation.hiddenSectionIds.has(sectionId)) continue;
+
       const def = getFieldTypeDef(field.type);
       const optionValues = field.options.map((o) => o.value);
-      const schema = def.buildAnswerSchema(field, optionValues);
-      const raw = submittedByFieldId.get(fieldId);
+      const raw = answersByFieldId[fieldId];
 
+      const dynamicallyRequired = evaluation.requiredFieldIds.has(fieldId);
+      if (dynamicallyRequired && isEmpty(raw)) {
+        throw new InvalidAnswerError(fieldId, "This field is required");
+      }
+
+      const schema = def.buildAnswerSchema(field, optionValues);
       const parsed = schema.safeParse(raw);
       if (!parsed.success) {
         throw new InvalidAnswerError(fieldId, parsed.error.issues[0]?.message ?? "Invalid value");
       }
 
       if (parsed.data === undefined || parsed.data === "" || parsed.data === null) {
-        continue; // optional + empty → skip the row
+        continue;
       }
 
       rowsToInsert.push({
@@ -304,6 +353,12 @@ export class FormService {
 
   /** Load sections + fields + options for a form and stitch into a tree. */
   private async attachSchema(form: Form): Promise<FormWithSchema> {
+    const [theme] = await this.db
+      .select()
+      .from(themesTable)
+      .where(eq(themesTable.id, form.themeId));
+    if (!theme) throw new Error(`FormService.attachSchema: theme ${form.themeId} missing`);
+
     const sections = await this.db
       .select()
       .from(formSectionsTable)
@@ -340,6 +395,13 @@ export class FormService {
             )
             .orderBy(fieldOptionsTable.order);
 
+    const conditions = await this.db
+      .select()
+      .from(fieldConditionsTable)
+      .where(
+        and(eq(fieldConditionsTable.formId, form.id), notDeleted(fieldConditionsTable.deletedAt)),
+      );
+
     const optionsByField = new Map<string, FieldOption[]>();
     for (const o of options) {
       const list = optionsByField.get(o.fieldId) ?? [];
@@ -357,6 +419,8 @@ export class FormService {
 
     return {
       ...form,
+      theme,
+      conditions,
       sections: sections.map((s) => ({
         ...s,
         fields: fieldsBySection.get(s.id) ?? [],
