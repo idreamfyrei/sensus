@@ -3,14 +3,7 @@ import { FIELD_TYPES, FIELD_TYPES_CATALOG, type FieldRow } from "./index";
 
 function mkField(type: FieldRow["type"], over: Partial<FieldRow> = {}): FieldRow {
   return {
-    id: "f1",
-    formId: "form1",
-    sectionId: "sec1",
     type,
-    label: "Q",
-    description: null,
-    placeholder: null,
-    order: 0,
     required: false,
     minLength: null,
     maxLength: null,
@@ -22,9 +15,6 @@ function mkField(type: FieldRow["type"], over: Partial<FieldRow> = {}): FieldRow
     maxRating: null,
     minSelected: null,
     maxSelected: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
     ...over,
   };
 }

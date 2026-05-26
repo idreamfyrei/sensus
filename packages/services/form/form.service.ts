@@ -12,7 +12,7 @@ import {
   type Database,
 } from "@repo/database";
 import { logger } from "@repo/logger";
-import { FIELD_TYPES_CATALOG } from "@repo/schemas";
+import { FIELD_TYPES_CATALOG, getFieldTypeDef } from "@repo/schemas";
 import { generateSlug } from "./slug";
 
 type Form = typeof formsTable.$inferSelect;
@@ -63,6 +63,17 @@ export class FormNotPublishedError extends Error {
   constructor() {
     super("Form is not accepting responses");
     this.name = "FormNotPublishedError";
+  }
+}
+
+export class InvalidAnswerError extends Error {
+  readonly code = "INVALID_ANSWER" as const;
+  constructor(
+    public readonly fieldId: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "InvalidAnswerError";
   }
 }
 
@@ -169,22 +180,68 @@ export class FormService {
 
   async submit(args: {
     slug: string;
-    answers: ReadonlyArray<{ fieldId: string; value: string; valueJson?: unknown }>;
+    answers: ReadonlyArray<{ fieldId: string; value: unknown }>;
   }): Promise<{ responseId: string }> {
-    const form = await this.getBySlug({ slug: args.slug });
+    const form = await this.getBySlugWithSchema({ slug: args.slug });
     if (form.status !== "published") throw new FormNotPublishedError();
+
+    // Build a fast lookup of all fields on the form (with their options).
+    const fieldsById = new Map<
+      string,
+      {
+        type: keyof typeof FIELD_TYPES_CATALOG;
+        field: (typeof form.sections)[number]["fields"][number];
+      }
+    >();
+    for (const section of form.sections) {
+      for (const f of section.fields) {
+        fieldsById.set(f.id, { type: f.type, field: f });
+      }
+    }
+
+    const submittedByFieldId = new Map<string, unknown>();
+    for (const a of args.answers) submittedByFieldId.set(a.fieldId, a.value);
+
+    // Validate every field on the form (catches missing required + bad shapes).
+    const rowsToInsert: Array<{
+      formFieldId: string;
+      valueText: string | null;
+      valueJson: unknown | null;
+    }> = [];
+
+    for (const [fieldId, { field }] of fieldsById) {
+      const def = getFieldTypeDef(field.type);
+      const optionValues = field.options.map((o) => o.value);
+      const schema = def.buildAnswerSchema(field, optionValues);
+      const raw = submittedByFieldId.get(fieldId);
+
+      const parsed = schema.safeParse(raw);
+      if (!parsed.success) {
+        throw new InvalidAnswerError(fieldId, parsed.error.issues[0]?.message ?? "Invalid value");
+      }
+
+      if (parsed.data === undefined || parsed.data === "" || parsed.data === null) {
+        continue; // optional + empty → skip the row
+      }
+
+      rowsToInsert.push({
+        formFieldId: fieldId,
+        valueText: def.answerKind === "text" ? String(parsed.data) : null,
+        valueJson: def.answerKind === "json" ? parsed.data : null,
+      });
+    }
 
     return this.db.transaction(async (tx) => {
       const [response] = await tx.insert(responsesTable).values({ formId: form.id }).returning();
       if (!response) throw new Error("FormService.submit: response insert returned nothing");
 
-      if (args.answers.length > 0) {
+      if (rowsToInsert.length > 0) {
         await tx.insert(responseAnswersTable).values(
-          args.answers.map((a) => ({
+          rowsToInsert.map((r) => ({
             responseId: response.id,
-            formFieldId: a.fieldId,
-            valueText: a.valueJson === undefined ? a.value : null,
-            valueJson: a.valueJson ?? null,
+            formFieldId: r.formFieldId,
+            valueText: r.valueText,
+            valueJson: r.valueJson,
           })),
         );
       }
@@ -192,7 +249,7 @@ export class FormService {
       logger.info("response submitted", {
         responseId: response.id,
         formId: form.id,
-        answerCount: args.answers.length,
+        answerCount: rowsToInsert.length,
       });
       return { responseId: response.id };
     });

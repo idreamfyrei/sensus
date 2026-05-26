@@ -16,7 +16,23 @@ export const FIELD_TYPES = [
 
 export type FieldType = (typeof FIELD_TYPES)[number];
 
-export type FieldRow = typeof formFieldsTable.$inferSelect;
+// Narrowed to the columns buildAnswerSchema actually reads. Lets both the
+// DB shape (Date timestamps) and wire shape (string timestamps) satisfy it.
+export type FieldRow = Pick<
+  typeof formFieldsTable.$inferSelect,
+  | "type"
+  | "required"
+  | "minLength"
+  | "maxLength"
+  | "min"
+  | "max"
+  | "pattern"
+  | "isInteger"
+  | "includeTime"
+  | "maxRating"
+  | "minSelected"
+  | "maxSelected"
+>;
 
 export type AnswerKind = "text" | "json";
 

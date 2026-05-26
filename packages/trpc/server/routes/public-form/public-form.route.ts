@@ -8,10 +8,12 @@ const getBySlugInput = z.object({
 
 const submitInput = z.object({
   slug: z.string().min(1).max(280),
+  // Value is typed loosely on the wire; server re-validates each answer
+  // against the field's catalog-built schema before insert.
   answers: z.array(
     z.object({
       fieldId: z.string().uuid(),
-      value: z.string(),
+      value: z.unknown(),
     }),
   ),
 });
