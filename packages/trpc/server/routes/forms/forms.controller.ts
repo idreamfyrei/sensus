@@ -27,6 +27,15 @@ export type SetLayoutInput = {
   layout: "one_per_screen" | "single_page";
   version: number;
 };
+export type SetVisibilityInput = {
+  id: string;
+  visibility: "public" | "unlisted";
+  version: number;
+};
+export type UnpublishInput = { id: string; version: number };
+export type SoftDeleteInput = { id: string };
+export type SetTemplateInput = { id: string; isTemplate: boolean };
+export type CloneTemplateInput = { templateId: string };
 
 export class FormsController {
   /** Resolve a themeId — either the one the client provided, or the
@@ -94,5 +103,52 @@ export class FormsController {
       layout: input.layout,
       version: input.version,
     });
+  }
+
+  async setVisibility(ctx: ProtectedContext, input: SetVisibilityInput) {
+    return ctx.services.forms.setVisibility({
+      id: input.id,
+      userId: ctx.userId,
+      visibility: input.visibility,
+      version: input.version,
+    });
+  }
+
+  async unpublish(ctx: ProtectedContext, input: UnpublishInput) {
+    return ctx.services.forms.unpublish({
+      id: input.id,
+      userId: ctx.userId,
+      version: input.version,
+    });
+  }
+
+  async softDelete(ctx: ProtectedContext, input: SoftDeleteInput): Promise<{ ok: true }> {
+    await ctx.services.forms.softDelete({ id: input.id, userId: ctx.userId });
+    return { ok: true };
+  }
+
+  async setTemplate(ctx: ProtectedContext, input: SetTemplateInput) {
+    return ctx.services.forms.setTemplate({
+      id: input.id,
+      userId: ctx.userId,
+      isTemplate: input.isTemplate,
+    });
+  }
+
+  async cloneTemplate(ctx: ProtectedContext, input: CloneTemplateInput) {
+    return ctx.services.forms.cloneTemplate({
+      templateId: input.templateId,
+      userId: ctx.userId,
+    });
+  }
+
+  async listPublic(ctx: Context) {
+    void ctx;
+    return ctx.services.forms.listPublic();
+  }
+
+  async listTemplates(ctx: Context) {
+    void ctx;
+    return ctx.services.forms.listTemplates();
   }
 }

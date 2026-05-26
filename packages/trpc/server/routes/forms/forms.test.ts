@@ -19,9 +19,12 @@ import { eq, themesTable, user as userTable, type Pool } from "@repo/database";
 import { createTestDb, setupTestDb, cleanTestDb } from "@repo/database/test-utils";
 import {
   AccountService,
+  AnalyticsService,
   ConditionService,
   FieldService,
   FormService,
+  RateLimitService,
+  ResponseService,
   SectionService,
   ThemeService,
 } from "@repo/services";
@@ -83,6 +86,8 @@ afterAll(async () => {
 function makeCtx(userId: string | null): Context {
   return {
     userId,
+    ipHash: null,
+    userAgent: null,
     db,
     services: {
       forms: new FormService(db),
@@ -91,6 +96,9 @@ function makeCtx(userId: string | null): Context {
       themes: new ThemeService(db),
       sections: new SectionService(db),
       conditions: new ConditionService(db),
+      responses: new ResponseService(db),
+      analytics: new AnalyticsService(db),
+      rateLimit: new RateLimitService(),
     },
   };
 }
@@ -259,13 +267,23 @@ describe("themes.list", () => {
 // ─── Public path (publicForm router) ────────────────────────────────────────
 
 describe("publicForm.getBySlug", () => {
-  it("returns the form for a valid slug (anonymous)", async () => {
+  it("returns the form for a published slug (anonymous)", async () => {
     const owner = serverRouter.createCaller(makeCtx(TEST_USER.id));
     const created = await owner.forms.create(validInput());
+    await owner.forms.publish({ id: created.id, version: created.version });
 
     const anon = serverRouter.createCaller(makeCtx(null));
     const form = await anon.publicForm.getBySlug({ slug: created.slug });
     expect(form.id).toBe(created.id);
+  });
+
+  it("maps a draft slug to BAD_REQUEST (not yet published)", async () => {
+    const owner = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const created = await owner.forms.create(validInput());
+    const anon = serverRouter.createCaller(makeCtx(null));
+    await expect(anon.publicForm.getBySlug({ slug: created.slug })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
   });
 
   it("maps an unknown slug to NOT_FOUND", async () => {

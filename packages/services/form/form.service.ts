@@ -6,6 +6,7 @@ import {
   fieldOptionsTable,
   formFieldsTable,
   formSectionsTable,
+  formViewsTable,
   formsTable,
   responsesTable,
   responseAnswersTable,
@@ -70,6 +71,14 @@ export class FormNotPublishedError extends Error {
   constructor() {
     super("Form is not accepting responses");
     this.name = "FormNotPublishedError";
+  }
+}
+
+export class FormArchivedError extends Error {
+  readonly code = "FORM_ARCHIVED" as const;
+  constructor() {
+    super("This form has been archived");
+    this.name = "FormArchivedError";
   }
 }
 
@@ -187,6 +196,306 @@ export class FormService {
     return updated;
   }
 
+  async unpublish(args: { id: string; userId: string; version: number }): Promise<Form> {
+    const existing = await this.getById({ id: args.id, userId: args.userId });
+    if (existing.version !== args.version) throw new FormVersionMismatchError();
+    if (existing.status !== "published") throw new FormNotPublishedError();
+
+    const [updated] = await this.db
+      .update(formsTable)
+      .set({ status: "unpublished", version: existing.version + 1 })
+      .where(eq(formsTable.id, args.id))
+      .returning();
+    if (!updated) throw new Error("FormService.unpublish: update returned nothing");
+    logger.info("form unpublished", { id: updated.id, userId: args.userId });
+    return updated;
+  }
+
+  async setVisibility(args: {
+    id: string;
+    userId: string;
+    visibility: "public" | "unlisted";
+    version: number;
+  }): Promise<Form> {
+    const existing = await this.getById({ id: args.id, userId: args.userId });
+    if (existing.version !== args.version) throw new FormVersionMismatchError();
+
+    const [updated] = await this.db
+      .update(formsTable)
+      .set({ visibility: args.visibility, version: existing.version + 1 })
+      .where(eq(formsTable.id, args.id))
+      .returning();
+    if (!updated) throw new Error("FormService.setVisibility: update returned nothing");
+    logger.info("form visibility changed", {
+      id: updated.id,
+      userId: args.userId,
+      visibility: args.visibility,
+    });
+    return updated;
+  }
+
+  async softDelete(args: { id: string; userId: string }): Promise<void> {
+    const existing = await this.getById({ id: args.id, userId: args.userId });
+    await this.db
+      .update(formsTable)
+      .set({ deletedAt: new Date() })
+      .where(eq(formsTable.id, existing.id));
+    logger.info("form soft-deleted", { id: existing.id, userId: args.userId });
+  }
+
+  /** Forms visible in /explore: public + published + non-deleted. */
+  async listPublic(args?: { limit?: number }): Promise<Array<Form & { theme: Theme }>> {
+    const limit = args?.limit ?? 100;
+    const rows = await this.db
+      .select()
+      .from(formsTable)
+      .where(
+        and(
+          eq(formsTable.visibility, "public"),
+          eq(formsTable.status, "published"),
+          notDeleted(formsTable.deletedAt),
+        ),
+      )
+      .limit(limit);
+    return this.attachThemes(rows);
+  }
+
+  /** Forms in /templates: isTemplate=true + public + published. */
+  async listTemplates(args?: { limit?: number }): Promise<Array<Form & { theme: Theme }>> {
+    const limit = args?.limit ?? 100;
+    const rows = await this.db
+      .select()
+      .from(formsTable)
+      .where(
+        and(
+          eq(formsTable.isTemplate, true),
+          eq(formsTable.visibility, "public"),
+          eq(formsTable.status, "published"),
+          notDeleted(formsTable.deletedAt),
+        ),
+      )
+      .limit(limit);
+    return this.attachThemes(rows);
+  }
+
+  async setTemplate(args: { id: string; userId: string; isTemplate: boolean }): Promise<Form> {
+    const existing = await this.getById({ id: args.id, userId: args.userId });
+    if (args.isTemplate && existing.visibility !== "public") {
+      throw new Error("Only public forms can be flagged as templates");
+    }
+    const [updated] = await this.db
+      .update(formsTable)
+      .set({ isTemplate: args.isTemplate })
+      .where(eq(formsTable.id, args.id))
+      .returning();
+    if (!updated) throw new Error("FormService.setTemplate: update returned nothing");
+    logger.info("form template flag changed", {
+      id: updated.id,
+      userId: args.userId,
+      isTemplate: args.isTemplate,
+    });
+    return updated;
+  }
+
+  /**
+   * Clone a published template into a new draft form owned by the caller.
+   * Copies sections, fields, options, and conditions. Slug is regenerated;
+   * status reset to draft; isTemplate=false.
+   */
+  async cloneTemplate(args: { templateId: string; userId: string }): Promise<Form> {
+    const [template] = await this.db
+      .select()
+      .from(formsTable)
+      .where(and(eq(formsTable.id, args.templateId), notDeleted(formsTable.deletedAt)));
+    if (!template) throw new FormNotFoundError();
+    if (!template.isTemplate || template.status !== "published") {
+      throw new FormNotFoundError();
+    }
+
+    const newSlug = generateSlug(template.title);
+
+    return this.db.transaction(async (tx) => {
+      const [newForm] = await tx
+        .insert(formsTable)
+        .values({
+          userId: args.userId,
+          title: template.title,
+          description: template.description,
+          themeId: template.themeId,
+          layout: template.layout,
+          visibility: "public",
+          slug: newSlug,
+          status: "draft",
+          isTemplate: false,
+        })
+        .returning();
+      if (!newForm) throw new Error("cloneTemplate: insert returned nothing");
+
+      const oldSections = await tx
+        .select()
+        .from(formSectionsTable)
+        .where(
+          and(eq(formSectionsTable.formId, template.id), notDeleted(formSectionsTable.deletedAt)),
+        )
+        .orderBy(formSectionsTable.order);
+
+      const sectionIdMap = new Map<string, string>();
+      const fieldIdMap = new Map<string, string>();
+
+      for (const s of oldSections) {
+        const [insertedSection] = await tx
+          .insert(formSectionsTable)
+          .values({
+            formId: newForm.id,
+            order: s.order,
+            title: s.title,
+            description: s.description,
+            pageBreakBefore: s.pageBreakBefore,
+            showIntroScreen: s.showIntroScreen,
+          })
+          .returning();
+        if (!insertedSection) throw new Error("cloneTemplate: section insert returned nothing");
+        sectionIdMap.set(s.id, insertedSection.id);
+      }
+
+      if (oldSections.length === 0) {
+        await tx.insert(formSectionsTable).values({ formId: newForm.id, order: 0 });
+      }
+
+      const oldSectionIds = oldSections.map((s) => s.id);
+      const oldFields =
+        oldSectionIds.length === 0
+          ? []
+          : await tx
+              .select()
+              .from(formFieldsTable)
+              .where(
+                and(
+                  inArray(formFieldsTable.sectionId, oldSectionIds),
+                  notDeleted(formFieldsTable.deletedAt),
+                ),
+              )
+              .orderBy(formFieldsTable.order);
+
+      for (const f of oldFields) {
+        const newSectionId = sectionIdMap.get(f.sectionId);
+        if (!newSectionId) continue;
+        const [insertedField] = await tx
+          .insert(formFieldsTable)
+          .values({
+            formId: newForm.id,
+            sectionId: newSectionId,
+            type: f.type,
+            label: f.label,
+            description: f.description,
+            placeholder: f.placeholder,
+            order: f.order,
+            required: f.required,
+            minLength: f.minLength,
+            maxLength: f.maxLength,
+            min: f.min,
+            max: f.max,
+            pattern: f.pattern,
+            isInteger: f.isInteger,
+            includeTime: f.includeTime,
+            maxRating: f.maxRating,
+            minSelected: f.minSelected,
+            maxSelected: f.maxSelected,
+          })
+          .returning();
+        if (!insertedField) continue;
+        fieldIdMap.set(f.id, insertedField.id);
+      }
+
+      const oldFieldIds = oldFields.map((f) => f.id);
+      const oldOptions =
+        oldFieldIds.length === 0
+          ? []
+          : await tx
+              .select()
+              .from(fieldOptionsTable)
+              .where(
+                and(
+                  inArray(fieldOptionsTable.fieldId, oldFieldIds),
+                  notDeleted(fieldOptionsTable.deletedAt),
+                ),
+              );
+      if (oldOptions.length > 0) {
+        await tx.insert(fieldOptionsTable).values(
+          oldOptions
+            .map((o) => {
+              const newFieldId = fieldIdMap.get(o.fieldId);
+              if (!newFieldId) return null;
+              return {
+                fieldId: newFieldId,
+                label: o.label,
+                value: o.value,
+                order: o.order,
+              };
+            })
+            .filter((v): v is NonNullable<typeof v> => v !== null),
+        );
+      }
+
+      const oldConditions = await tx
+        .select()
+        .from(fieldConditionsTable)
+        .where(
+          and(
+            eq(fieldConditionsTable.formId, template.id),
+            notDeleted(fieldConditionsTable.deletedAt),
+          ),
+        );
+      if (oldConditions.length > 0) {
+        const toInsert = oldConditions
+          .map((c) => {
+            const newSource = fieldIdMap.get(c.sourceFieldId);
+            if (!newSource) return null;
+            const newTargetField = c.targetFieldId ? fieldIdMap.get(c.targetFieldId) : null;
+            const newTargetSection = c.targetSectionId ? sectionIdMap.get(c.targetSectionId) : null;
+            if (!newTargetField && !newTargetSection) return null;
+            return {
+              formId: newForm.id,
+              sourceFieldId: newSource,
+              operator: c.operator,
+              value: c.value,
+              action: c.action,
+              targetFieldId: newTargetField ?? null,
+              targetSectionId: newTargetSection ?? null,
+            };
+          })
+          .filter((v): v is NonNullable<typeof v> => v !== null);
+        if (toInsert.length > 0) {
+          await tx.insert(fieldConditionsTable).values(toInsert);
+        }
+      }
+
+      logger.info("template cloned", {
+        templateId: template.id,
+        newFormId: newForm.id,
+        userId: args.userId,
+      });
+      return newForm;
+    });
+  }
+
+  private async attachThemes(rows: Form[]): Promise<Array<Form & { theme: Theme }>> {
+    if (rows.length === 0) return [];
+    const themeIds = Array.from(new Set(rows.map((r) => r.themeId)));
+    const themes = await this.db
+      .select()
+      .from(themesTable)
+      .where(inArray(themesTable.id, themeIds));
+    const byId = new Map(themes.map((t) => [t.id, t]));
+    return rows
+      .map((r) => {
+        const theme = byId.get(r.themeId);
+        if (!theme) return null;
+        return { ...r, theme };
+      })
+      .filter((v): v is Form & { theme: Theme } => v !== null);
+  }
+
   async setLayout(args: {
     id: string;
     userId: string;
@@ -253,6 +562,15 @@ export class FormService {
   async getBySlugWithSchema(args: { slug: string }): Promise<FormWithSchema> {
     const form = await this.getBySlug(args);
     return this.attachSchema(form);
+  }
+
+  async recordView(args: { slug: string; ipHash?: string | null }): Promise<void> {
+    const [form] = await this.db
+      .select({ id: formsTable.id, status: formsTable.status })
+      .from(formsTable)
+      .where(and(eq(formsTable.slug, args.slug), notDeleted(formsTable.deletedAt)));
+    if (!form || form.status !== "published") return;
+    await this.db.insert(formViewsTable).values({ formId: form.id, ipHash: args.ipHash ?? null });
   }
 
   async submit(args: {

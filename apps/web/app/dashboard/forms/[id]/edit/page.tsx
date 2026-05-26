@@ -7,6 +7,9 @@ import { trpc } from "~/trpc/client";
 import { LayoutToggle } from "~/components/builder/layout-toggle";
 import { SectionsList } from "~/components/builder/sections-list";
 import { ThemePicker } from "~/components/builder/theme-picker";
+import { VisibilityPicker } from "~/components/builder/visibility-picker";
+import { DangerZone } from "~/components/builder/danger-zone";
+import { TemplateToggle } from "~/components/builder/template-toggle";
 
 export default function EditFormPage() {
   const params = useParams<{ id: string }>();
@@ -114,6 +117,12 @@ export default function EditFormPage() {
           </div>
         )}
 
+        <VisibilityPicker
+          formId={formData.id}
+          visibility={formData.visibility}
+          version={formData.version}
+        />
+
         {!isPublished && (
           <LayoutToggle formId={formData.id} layout={formData.layout} version={formData.version} />
         )}
@@ -143,6 +152,10 @@ export default function EditFormPage() {
           />
         )}
 
+        {isPublished && formData.visibility === "public" && (
+          <TemplateToggle formId={formData.id} isTemplate={formData.isTemplate} />
+        )}
+
         {isPublished && (
           <section className="p-6 bg-white border border-neutral-200 rounded-lg space-y-3">
             <h2 className="font-medium">Share this form</h2>
@@ -161,17 +174,33 @@ export default function EditFormPage() {
                 {copied ? "Copied!" : "Copy"}
               </button>
             </div>
-            <Link
-              href={`/f/${formData.slug}`}
-              target="_blank"
-              className="inline-block text-sm text-blue-600 hover:underline"
-            >
-              Open public form →
-            </Link>
+            <div className="flex flex-wrap gap-3 text-sm">
+              <Link
+                href={`/f/${formData.slug}`}
+                target="_blank"
+                className="text-blue-600 hover:underline"
+              >
+                Open public form →
+              </Link>
+              <Link
+                href={`/dashboard/forms/${formData.id}/responses`}
+                className="text-blue-600 hover:underline"
+              >
+                View responses →
+              </Link>
+              <Link
+                href={`/dashboard/forms/${formData.id}/analytics`}
+                className="text-blue-600 hover:underline"
+              >
+                Analytics →
+              </Link>
+            </div>
           </section>
         )}
 
         <SectionsList form={formData} disabled={isPublished} />
+
+        <DangerZone formId={formData.id} status={formData.status} version={formData.version} />
       </div>
     </main>
   );

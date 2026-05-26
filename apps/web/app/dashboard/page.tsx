@@ -110,19 +110,26 @@ export default function DashboardPage() {
                   >
                     {form.title}
                   </Link>
-                  <p className="text-xs text-neutral-500 mt-1 font-mono truncate">
-                    {form.status} · /f/{form.slug}
-                  </p>
+                  <p className="text-xs text-neutral-500 mt-1 font-mono truncate">/f/{form.slug}</p>
                 </div>
-                <span
-                  className={`text-xs px-2 py-1 rounded font-medium ${
-                    form.status === "published"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-neutral-100 text-neutral-600"
-                  }`}
-                >
-                  {form.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2 py-1 rounded font-medium bg-neutral-100 text-neutral-700 capitalize">
+                    {form.visibility === "invite_only" ? "unlisted" : form.visibility}
+                  </span>
+                  <span
+                    className={`text-xs px-2 py-1 rounded font-medium ${
+                      form.status === "published"
+                        ? "bg-green-100 text-green-700"
+                        : form.status === "unpublished"
+                          ? "bg-amber-100 text-amber-700"
+                          : form.status === "archived"
+                            ? "bg-neutral-200 text-neutral-600"
+                            : "bg-neutral-100 text-neutral-600"
+                    }`}
+                  >
+                    {form.status}
+                  </span>
+                </div>
               </li>
             ))}
           </ul>

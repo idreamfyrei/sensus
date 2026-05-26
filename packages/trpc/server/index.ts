@@ -8,6 +8,8 @@ import { accountRouter } from "./routes/account/account.route";
 import { themesRouter } from "./routes/themes/themes.route";
 import { sectionsRouter } from "./routes/sections/sections.route";
 import { conditionsRouter } from "./routes/conditions/conditions.route";
+import { responsesRouter } from "./routes/responses/responses.route";
+import { analyticsRouter } from "./routes/analytics/analytics.route";
 
 export const serverRouter = router({
   health: healthRouter,
@@ -18,6 +20,8 @@ export const serverRouter = router({
   themes: themesRouter,
   sections: sectionsRouter,
   conditions: conditionsRouter,
+  responses: responsesRouter,
+  analytics: analyticsRouter,
 });
 
 export { createContext } from "./context";

@@ -114,6 +114,7 @@ export function FormRenderer({
   const router = useRouter();
   const allFields = form.sections.flatMap((s) => s.fields);
   const [previewSubmitted, setPreviewSubmitted] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
 
   const schema = useMemo(() => {
     const shape: Record<string, z.ZodTypeAny> = {};
@@ -172,8 +173,28 @@ export function FormRenderer({
     const answers = Object.entries(values)
       .filter(([fieldId, v]) => visibleFieldIds.has(fieldId) && !isEmpty(v))
       .map(([fieldId, value]) => ({ fieldId, value }));
-    submit.mutate({ slug: form.slug, answers });
+    submit.mutate({ slug: form.slug, answers, honeypot });
   };
+
+  const honeypotField = (
+    <input
+      type="text"
+      tabIndex={-1}
+      autoComplete="off"
+      aria-hidden="true"
+      value={honeypot}
+      onChange={(e) => setHoneypot(e.target.value)}
+      style={{
+        position: "absolute",
+        left: "-10000px",
+        top: "auto",
+        width: "1px",
+        height: "1px",
+        overflow: "hidden",
+      }}
+      name="company_website"
+    />
+  );
 
   if (totalSteps === 0 || !current) {
     return (
@@ -183,10 +204,11 @@ export function FormRenderer({
             setPreviewSubmitted(true);
             return;
           }
-          submit.mutate({ slug: form.slug, answers: [] });
+          submit.mutate({ slug: form.slug, answers: [], honeypot });
         })}
         className="space-y-6"
       >
+        {honeypotField}
         <p className="sensus-muted text-sm italic">
           This form has no visible fields. Submit to record an empty response.
         </p>
@@ -267,6 +289,7 @@ export function FormRenderer({
 
   return (
     <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+      {honeypotField}
       <ProgressIndicator layout={form.layout} screens={screens} currentIndex={currentIndex} />
 
       <div className="space-y-6">

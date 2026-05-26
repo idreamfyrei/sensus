@@ -25,6 +25,9 @@ const SERVICE_ERROR_CODE_TO_TRPC = {
   LAST_SECTION: "CONFLICT",
   CONDITION_NOT_FOUND: "NOT_FOUND",
   CONDITION_INVALID_TARGET: "BAD_REQUEST",
+  RESPONSE_NOT_FOUND: "NOT_FOUND",
+  RATE_LIMIT_EXCEEDED: "TOO_MANY_REQUESTS",
+  FORM_ARCHIVED: "BAD_REQUEST",
 } as const satisfies Record<string, TRPCError["code"]>;
 
 type ErrorWithCode = { code: string; message?: string };

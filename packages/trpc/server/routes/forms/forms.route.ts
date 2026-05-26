@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure, router } from "../../trpc";
+import { protectedProcedure, publicProcedure, router } from "../../trpc";
 import { FormsController } from "./forms.controller";
 
 const createFormInput = z.object({
@@ -29,6 +29,28 @@ const setLayoutInput = z.object({
   version: z.number().int(),
 });
 
+const setVisibilityInput = z.object({
+  id: z.string().uuid(),
+  visibility: z.enum(["public", "unlisted"]),
+  version: z.number().int(),
+});
+
+const unpublishInput = z.object({
+  id: z.string().uuid(),
+  version: z.number().int(),
+});
+
+const softDeleteInput = z.object({ id: z.string().uuid() });
+
+const setTemplateInput = z.object({
+  id: z.string().uuid(),
+  isTemplate: z.boolean(),
+});
+
+const cloneTemplateInput = z.object({
+  templateId: z.string().uuid(),
+});
+
 const controller = new FormsController();
 
 export const formsRouter = router({
@@ -51,4 +73,27 @@ export const formsRouter = router({
   setLayout: protectedProcedure
     .input(setLayoutInput)
     .mutation(({ ctx, input }) => controller.setLayout(ctx, input)),
+
+  setVisibility: protectedProcedure
+    .input(setVisibilityInput)
+    .mutation(({ ctx, input }) => controller.setVisibility(ctx, input)),
+
+  unpublish: protectedProcedure
+    .input(unpublishInput)
+    .mutation(({ ctx, input }) => controller.unpublish(ctx, input)),
+
+  softDelete: protectedProcedure
+    .input(softDeleteInput)
+    .mutation(({ ctx, input }) => controller.softDelete(ctx, input)),
+
+  setTemplate: protectedProcedure
+    .input(setTemplateInput)
+    .mutation(({ ctx, input }) => controller.setTemplate(ctx, input)),
+
+  cloneTemplate: protectedProcedure
+    .input(cloneTemplateInput)
+    .mutation(({ ctx, input }) => controller.cloneTemplate(ctx, input)),
+
+  listPublic: publicProcedure.query(({ ctx }) => controller.listPublic(ctx)),
+  listTemplates: publicProcedure.query(({ ctx }) => controller.listTemplates(ctx)),
 });
