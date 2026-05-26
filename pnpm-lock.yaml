@@ -41,6 +41,12 @@ importers:
 
   apps/api:
     dependencies:
+      "@repo/auth":
+        specifier: workspace:*
+        version: link:../../packages/auth
+      "@repo/database":
+        specifier: workspace:*
+        version: link:../../packages/database
       "@repo/logger":
         specifier: workspace:*
         version: link:../../packages/logger

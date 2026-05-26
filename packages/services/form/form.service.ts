@@ -10,23 +10,9 @@ import {
 import { logger } from "@repo/logger";
 import { generateSlug } from "./slug";
 
-/**
- * The form row shape as the service hands it out. We use drizzle's native
- * `$inferSelect` here instead of `Form` from @repo/schemas because the
- * latter goes through drizzle-zod 0.7 + Zod 4, which produces a polluted
- * union for pgEnum columns (sneaks in numeric indices + array-prototype
- * methods). Drizzle's native infer is clean and flows correctly through
- * tRPC → ServerRouter → frontend.
- */
+// Drizzle's native inferred select — avoids drizzle-zod 0.7 enum-pollution.
 type Form = typeof formsTable.$inferSelect;
 
-/**
- * Phase 2 create input. Intentionally narrower than @repo/schemas's
- * `CreateFormInput` — visibility, layout, theme branding etc. come via
- * dedicated update methods in Phase 4. Keeping the create shape minimal
- * lets the slice ship without wrangling enum types across workspace
- * boundaries.
- */
 export type CreateFormServiceInput = {
   title: string;
   description?: string | null;
@@ -71,8 +57,6 @@ export class FormService {
   async create(args: { userId: string; input: CreateFormServiceInput }): Promise<Form> {
     const slug = generateSlug(args.input.title);
 
-    // visibility/layout omitted → DB defaults (public, one_per_screen).
-    // Dedicated update methods will set them in Phase 4.
     const newForm: typeof formsTable.$inferInsert = {
       userId: args.userId,
       title: args.input.title,

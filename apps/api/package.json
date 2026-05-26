@@ -7,7 +7,8 @@
     "dev": "dotenv -- tsx watch ./src/index.ts",
     "build": "tsup",
     "lint": "eslint src/*",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "db:seed-dev": "dotenv -- tsx ./src/seed-dev.ts"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
@@ -23,6 +24,8 @@
     "vitest": "^2.1.0"
   },
   "dependencies": {
+    "@repo/auth": "workspace:*",
+    "@repo/database": "workspace:*",
     "@repo/trpc": "workspace:*",
     "@repo/logger": "workspace:*",
     "@scalar/express-api-reference": "^0.8.30",

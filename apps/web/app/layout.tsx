@@ -23,9 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // `suppressHydrationWarning` is needed because next-themes (in GlobalProviders)
-    // sets `class` on <html> client-side via an inline script — server can't know
-    // the system preference. Without this, every page hydrates with a warning.
+    // next-themes sets the `class` client-side; suppress the expected mismatch.
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <GlobalProviders>{children}</GlobalProviders>

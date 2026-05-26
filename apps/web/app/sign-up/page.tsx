@@ -47,7 +47,6 @@ export default function SignUpPage() {
       setError(result.error.message ?? "Sign up failed");
       return;
     }
-    // Better Auth auto-signs in on successful sign-up.
     router.push("/dashboard");
     router.refresh();
   };

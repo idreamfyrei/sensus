@@ -8,12 +8,7 @@ import { Pool } from "pg";
 const TEST_DATABASE_URL =
   process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/sensus_test";
 
-/**
- * Spin up a connection to the test DB. Return type is inferred from
- * `drizzle(pool)` so it carries the same `& { $client }` brand as the
- * production `db` instance — services that annotate constructors with
- * `Database` (= typeof db) accept this as a drop-in.
- */
+// Inferred return type — carries the `& { $client }` brand `Database` expects.
 export function createTestDb() {
   const pool = new Pool({ connectionString: TEST_DATABASE_URL });
   const db = drizzle(pool);

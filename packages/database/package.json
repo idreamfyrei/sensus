@@ -4,7 +4,6 @@
   "scripts": {
     "db:migrate": "dotenv -- drizzle-kit migrate",
     "db:generate": "dotenv -- drizzle-kit generate",
-    "db:seed-dev": "dotenv -- tsx seed-dev.ts",
     "db:studio": "dotenv -- drizzle-kit studio",
     "test": "dotenv -- vitest run",
     "check-types": "tsc --noEmit"

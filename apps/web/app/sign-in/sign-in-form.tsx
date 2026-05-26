@@ -29,8 +29,6 @@ type SignInForm = z.infer<typeof signInSchema>;
 export function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Middleware redirects to /sign-in?next=<originally-requested-path>;
-  // we return the user there on success.
   const next = searchParams.get("next") ?? "/dashboard";
 
   const [error, setError] = useState<string | null>(null);

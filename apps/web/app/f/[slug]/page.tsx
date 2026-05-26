@@ -43,7 +43,6 @@ export default function PublicFormPage() {
 
   const isPublished = form.data.status === "published";
 
-  // Phase 2: no fields to render yet. Submit posts an empty answer set.
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     submit.mutate({ slug, answers: [] });

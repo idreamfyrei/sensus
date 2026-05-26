@@ -46,8 +46,6 @@ export default function EditFormPage() {
 
   if (!form.data) return null;
 
-  // Extract into a narrowed local so the closures below see a non-null type
-  // without needing `!` non-null assertions (banned by our ESLint rule).
   const formData = form.data;
   const isPublished = formData.status === "published";
   const publicUrl =

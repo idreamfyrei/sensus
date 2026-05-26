@@ -18,13 +18,7 @@ const openApiDocument = generateOpenApiDocument(serverRouter, {
   baseUrl: env.BASE_URL.concat("/api"),
 });
 
-/**
- * CORS — must echo a specific origin (not `*`) because the tRPC client sends
- * `credentials: "include"` (cookies needed for Better Auth in Phase 3).
- * Browsers reject `Access-Control-Allow-Origin: *` when credentials are in play.
- *
- * In dev we trust the local web app; in prod, list explicit allowed origins.
- */
+// Browsers reject `Allow-Origin: *` with `credentials: include`. Specific origin required.
 const isProd = env.NODE_ENV === "prod" || env.NODE_ENV === "production";
 const allowedOrigins = isProd
   ? (process.env.WEB_ORIGIN?.split(",") ?? [])

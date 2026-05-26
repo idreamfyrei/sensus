@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { api } from "~/trpc/server";
 
-// Don't statically prerender — the tRPC health probe needs the api server.
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
@@ -10,7 +9,7 @@ export default async function Home() {
     const result = await api.health.getHealth.query();
     apiStatus = result.status;
   } catch {
-    // api unreachable; fall through to the "unavailable" fallback.
+    // unreachable api — keep fallback
   }
 
   return (

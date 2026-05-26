@@ -7,16 +7,8 @@ export const tRPCContext = initTRPC.meta<OpenApiMeta>().context<Context>().creat
 
 export const router = tRPCContext.router;
 
-/**
- * Maps known service error codes → TRPCError codes. We match on the
- * service error's `code` string field (not `instanceof`) because pnpm
- * workspace module resolution can give different class identities to the
- * same export depending on the import path — string equality is robust
- * across that boundary. Every service error class declares a `readonly
- * code = "..."` literal field we can read here.
- *
- * Add a case for each new typed service error as it lands.
- */
+// Match on `code` string field (not `instanceof`) — workspace module
+// resolution can give different class identities to the same export.
 const SERVICE_ERROR_CODE_TO_TRPC = {
   FORM_NOT_FOUND: "NOT_FOUND",
   FORM_FORBIDDEN: "FORBIDDEN",
@@ -38,7 +30,6 @@ function hasServiceCode(err: unknown): err is ErrorWithCode {
 const serviceErrorMapper = tRPCContext.middleware(async ({ next }) => {
   const result = await next();
   if (!result.ok) {
-    // tRPC v11: middleware sees errors via `result.ok === false`, not throws.
     const cause = result.error.cause;
     if (hasServiceCode(cause)) {
       const mapped =
@@ -51,12 +42,6 @@ const serviceErrorMapper = tRPCContext.middleware(async ({ next }) => {
   return result;
 });
 
-/**
- * Auth middleware. Asserts `ctx.userId` is non-null, then narrows the type
- * so downstream handlers see `ctx.userId: string` (no null check needed).
- * React analogy: like a route guard that pulls `useSession()` and redirects
- * if missing — same idea, server-side.
- */
 const authMiddleware = tRPCContext.middleware(({ ctx, next }) => {
   if (ctx.userId === null) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "Sign in required" });
@@ -64,8 +49,6 @@ const authMiddleware = tRPCContext.middleware(({ ctx, next }) => {
   return next({ ctx: { ...ctx, userId: ctx.userId } });
 });
 
-/** Public procedure: anonymous OK, but service errors still get mapped. */
 export const publicProcedure = tRPCContext.procedure.use(serviceErrorMapper);
 
-/** Protected procedure: requires `ctx.userId`, plus the same error mapping. */
 export const protectedProcedure = tRPCContext.procedure.use(serviceErrorMapper).use(authMiddleware);
