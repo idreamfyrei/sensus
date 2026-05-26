@@ -1,7 +1,3 @@
-/**
- * Phase 4.6 — verify `seedThemes()` inserts all 10 plan-defined presets
- * and is idempotent.
- */
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
 import { inArray } from "drizzle-orm";
 import type { Pool } from "pg";

@@ -1,20 +1,7 @@
-/**
- * Seed module for the 10 plan-defined theme presets (Phase 4.6).
- *
- * Idempotent: re-running is a no-op via `onConflictDoNothing(themes.key)`.
- * Consumed by `apps/api/src/seed-dev.ts` and (Phase 8) the full demo seed.
- *
- * The `default` theme is NOT in this list — it lives in `seed-dev.ts` and
- * is a dev-bootstrap row, not a user-visible preset.
- */
 import type { InsertTheme } from "./models/theme";
 import { themesTable } from "./models/theme";
 import type { Database } from "./index";
 
-/**
- * Boolean visual-effect flags consumed by the page-wide theming layer
- * (Phase 4.8). Stored in the `themes.effects` jsonb column.
- */
 export type ThemeEffects = {
   scanlines?: boolean;
   glow?: boolean;
@@ -23,13 +10,6 @@ export type ThemeEffects = {
   halftone?: boolean;
 };
 
-/**
- * The 10 presets. Each is a coherent design-token set hand-tuned for
- * readability when painted page-wide on `/f/[slug]`. Effects flags match
- * the vibe (scanlines for terminal/pixel, blur for glassmorphism, etc.).
- *
- * Color choices target WCAG-AA contrast for body text on surfaces.
- */
 export const THEME_PRESETS = [
   {
     key: "pixel",
@@ -203,12 +183,6 @@ export const THEME_PRESETS = [
   },
 ] as const satisfies readonly InsertTheme[];
 
-/**
- * Idempotent insert. Re-running has no effect for keys that already exist.
- * Returns the count of rows the caller intended to insert (the catalog size),
- * not the count of new rows — Drizzle's `onConflictDoNothing` doesn't expose
- * that without a `returning()` that we don't need.
- */
 export async function seedThemes(db: Database): Promise<{ presetCount: number }> {
   await db
     .insert(themesTable)

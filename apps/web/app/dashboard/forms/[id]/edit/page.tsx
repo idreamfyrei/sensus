@@ -7,6 +7,7 @@ import { FIELD_TYPES_CATALOG } from "@repo/schemas/fields";
 import { trpc } from "~/trpc/client";
 import { AddFieldSection } from "~/components/builder/add-field-section";
 import { FieldCard } from "~/components/builder/field-card";
+import { ThemePicker } from "~/components/builder/theme-picker";
 
 export default function EditFormPage() {
   const params = useParams<{ id: string }>();
@@ -23,6 +24,8 @@ export default function EditFormPage() {
   });
 
   const [copied, setCopied] = useState(false);
+  const [themePickerOpen, setThemePickerOpen] = useState(false);
+  const themes = trpc.themes.list.useQuery();
 
   if (form.isLoading) {
     return (
@@ -54,8 +57,9 @@ export default function EditFormPage() {
   const publicUrl =
     typeof window !== "undefined" ? `${window.location.origin}/f/${formData.slug}` : "";
 
-  // Phase 4: exactly one auto-created section. Phase 5 adds the section UI.
   const section = formData.sections[0];
+  const currentTheme = themes.data?.find((t) => t.id === formData.themeId);
+  const currentThemeLabel = currentTheme?.name ?? "Default";
 
   const handleCopy = async () => {
     if (!publicUrl) return;
@@ -100,6 +104,31 @@ export default function EditFormPage() {
           <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
             {publish.error.message}
           </div>
+        )}
+
+        <section className="flex items-center justify-between p-4 bg-white border border-neutral-200 rounded-lg">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-neutral-500">Theme</p>
+            <p className="font-medium">{currentThemeLabel}</p>
+          </div>
+          {!isPublished && (
+            <button
+              type="button"
+              onClick={() => setThemePickerOpen((open) => !open)}
+              className="px-3 py-1.5 text-sm border border-neutral-300 rounded hover:bg-neutral-50 transition"
+            >
+              {themePickerOpen ? "Close" : "Change theme"}
+            </button>
+          )}
+        </section>
+
+        {themePickerOpen && !isPublished && (
+          <ThemePicker
+            formId={formData.id}
+            currentThemeId={formData.themeId}
+            version={formData.version}
+            onClose={() => setThemePickerOpen(false)}
+          />
         )}
 
         {isPublished && (

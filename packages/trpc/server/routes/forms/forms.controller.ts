@@ -21,6 +21,7 @@ export type CreateFormInput = {
 
 export type GetFormInput = { id: string };
 export type PublishFormInput = { id: string; version: number };
+export type SetThemeInput = { id: string; themeId: string; version: number };
 
 export class FormsController {
   /** Resolve a themeId — either the one the client provided, or the
@@ -68,6 +69,15 @@ export class FormsController {
     return ctx.services.forms.publish({
       id: input.id,
       userId: ctx.userId,
+      version: input.version,
+    });
+  }
+
+  async setTheme(ctx: ProtectedContext, input: SetThemeInput) {
+    return ctx.services.forms.setTheme({
+      id: input.id,
+      userId: ctx.userId,
+      themeId: input.themeId,
       version: input.version,
     });
   }

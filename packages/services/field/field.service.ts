@@ -10,7 +10,7 @@ import {
 } from "@repo/database";
 import { logger } from "@repo/logger";
 import { FIELD_TYPES_CATALOG, type FieldType } from "@repo/schemas";
-import { FormForbiddenError, FormNotFoundError } from "../form/form.service";
+import { FormForbiddenError, FormNotFoundError, FormSchemaLockedError } from "../form/form.service";
 
 type Field = typeof formFieldsTable.$inferSelect;
 type FieldOption = typeof fieldOptionsTable.$inferSelect;
@@ -28,14 +28,6 @@ export class FieldOptionsRequiredError extends Error {
   constructor() {
     super("This field type requires at least one option");
     this.name = "FieldOptionsRequiredError";
-  }
-}
-
-export class FormSchemaLockedError extends Error {
-  readonly code = "FORM_SCHEMA_LOCKED" as const;
-  constructor() {
-    super("Form schema is locked — only draft forms can be edited");
-    this.name = "FormSchemaLockedError";
   }
 }
 

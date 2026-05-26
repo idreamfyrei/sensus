@@ -26,6 +26,8 @@ import {
   FormForbiddenError,
   FormVersionMismatchError,
   FormNotPublishedError,
+  FormSchemaLockedError,
+  ThemeNotFoundForFormError,
 } from "./form.service";
 import { kebab, generateSlug } from "./slug";
 
@@ -240,6 +242,118 @@ describe("FormService.publish", () => {
 
     await expect(
       svc.publish({ id: created.id, userId: USER_B.id, version: created.version }),
+    ).rejects.toThrow(FormForbiddenError);
+  });
+});
+
+// ─── FormService.setTheme ───────────────────────────────────────────────────
+
+describe("FormService.setTheme", () => {
+  async function seedAltTheme(key: "pixel"): Promise<string> {
+    const [row] = await db
+      .insert(themesTable)
+      .values({
+        key,
+        name: "Pixel",
+        bg: "#000",
+        surface: "#111",
+        primary: "#f8e71c",
+        accent: "#e94560",
+        textColor: "#eee",
+        muted: "#888",
+        borderStyle: "solid",
+        borderRadius: "0px",
+        fontHeading: "monospace",
+        fontBody: "monospace",
+      })
+      .returning();
+    if (!row) throw new Error("alt theme seed failed");
+    return row.id;
+  }
+
+  it("updates the form's themeId and bumps version", async () => {
+    const altId = await seedAltTheme("pixel");
+    const created = await svc.create({
+      userId: USER_A.id,
+      input: { title: "X", themeId },
+    });
+
+    const updated = await svc.setTheme({
+      id: created.id,
+      userId: USER_A.id,
+      themeId: altId,
+      version: created.version,
+    });
+
+    expect(updated.themeId).toBe(altId);
+    expect(updated.version).toBe(created.version + 1);
+  });
+
+  it("rejects setTheme on a published form (schema lock)", async () => {
+    const altId = await seedAltTheme("pixel");
+    const created = await svc.create({
+      userId: USER_A.id,
+      input: { title: "X", themeId },
+    });
+    await svc.publish({ id: created.id, userId: USER_A.id, version: created.version });
+
+    await expect(
+      svc.setTheme({
+        id: created.id,
+        userId: USER_A.id,
+        themeId: altId,
+        version: created.version + 1,
+      }),
+    ).rejects.toThrow(FormSchemaLockedError);
+  });
+
+  it("rejects setTheme with a stale version", async () => {
+    const altId = await seedAltTheme("pixel");
+    const created = await svc.create({
+      userId: USER_A.id,
+      input: { title: "X", themeId },
+    });
+
+    await expect(
+      svc.setTheme({
+        id: created.id,
+        userId: USER_A.id,
+        themeId: altId,
+        version: created.version + 99,
+      }),
+    ).rejects.toThrow(FormVersionMismatchError);
+  });
+
+  it("throws ThemeNotFoundForFormError when the theme id doesn't exist", async () => {
+    const created = await svc.create({
+      userId: USER_A.id,
+      input: { title: "X", themeId },
+    });
+
+    await expect(
+      svc.setTheme({
+        id: created.id,
+        userId: USER_A.id,
+        themeId: "11111111-1111-4111-8111-111111111111",
+        version: created.version,
+      }),
+    ).rejects.toThrow(ThemeNotFoundForFormError);
+  });
+
+  it("rejects setTheme from a non-owner", async () => {
+    const altId = await seedAltTheme("pixel");
+    const created = await svc.create({
+      userId: USER_A.id,
+      input: { title: "X", themeId },
+    });
+
+    await expect(
+      svc.setTheme({
+        id: created.id,
+        userId: USER_B.id,
+        themeId: altId,
+        version: created.version,
+      }),
     ).rejects.toThrow(FormForbiddenError);
   });
 });

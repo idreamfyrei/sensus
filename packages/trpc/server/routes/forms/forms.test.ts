@@ -15,9 +15,10 @@
  */
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
 import { TRPCError } from "@trpc/server";
-import { themesTable, user as userTable, type Pool } from "@repo/database";
+import { eq, themesTable, user as userTable, type Pool } from "@repo/database";
 import { createTestDb, setupTestDb, cleanTestDb } from "@repo/database/test-utils";
-import { AccountService, FieldService, FormService } from "@repo/services";
+import { AccountService, FieldService, FormService, ThemeService } from "@repo/services";
+import { seedThemes } from "@repo/database/seed-themes";
 
 import { serverRouter } from "../../index";
 import type { Context } from "../../context";
@@ -80,6 +81,7 @@ function makeCtx(userId: string | null): Context {
       forms: new FormService(db),
       fields: new FieldService(db),
       account: new AccountService(db),
+      themes: new ThemeService(db),
     },
   };
 }
@@ -176,6 +178,72 @@ describe("forms.publish", () => {
     await expect(
       otherCaller.forms.publish({ id: created.id, version: created.version }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+});
+
+describe("forms.setTheme", () => {
+  it("updates themeId on a draft form and bumps version", async () => {
+    await seedThemes(db);
+    const [altRow] = await db.select().from(themesTable).where(eq(themesTable.key, "pixel"));
+    if (!altRow) throw new Error("pixel preset missing");
+
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const created = await caller.forms.create(validInput());
+
+    const updated = await caller.forms.setTheme({
+      id: created.id,
+      themeId: altRow.id,
+      version: created.version,
+    });
+
+    expect(updated.themeId).toBe(altRow.id);
+    expect(updated.version).toBe(created.version + 1);
+  });
+
+  it("maps an unknown themeId to NOT_FOUND", async () => {
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const created = await caller.forms.create(validInput());
+
+    await expect(
+      caller.forms.setTheme({
+        id: created.id,
+        themeId: "11111111-1111-4111-8111-111111111111",
+        version: created.version,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("maps a setTheme call on a published form to CONFLICT (schema lock)", async () => {
+    await seedThemes(db);
+    const [altRow] = await db.select().from(themesTable).where(eq(themesTable.key, "pixel"));
+    if (!altRow) throw new Error("pixel preset missing");
+
+    const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
+    const created = await caller.forms.create(validInput());
+    const published = await caller.forms.publish({
+      id: created.id,
+      version: created.version,
+    });
+
+    await expect(
+      caller.forms.setTheme({
+        id: created.id,
+        themeId: altRow.id,
+        version: published.version,
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+});
+
+describe("themes.list", () => {
+  it("returns the 10 plan presets to anonymous callers", async () => {
+    await seedThemes(db);
+    const anon = serverRouter.createCaller(makeCtx(null));
+    const themes = await anon.themes.list();
+    expect(themes).toHaveLength(10);
+    expect(themes.map((t) => t.key)).toContain("pixel");
+    expect(themes.map((t) => t.key)).toContain("anime");
+    expect(themes.map((t) => t.key)).not.toContain("default");
   });
 });
 

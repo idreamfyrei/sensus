@@ -8,6 +8,7 @@ import {
   formsTable,
   responsesTable,
   responseAnswersTable,
+  themesTable,
   notDeleted,
   type Database,
 } from "@repo/database";
@@ -82,6 +83,22 @@ export class FormPublishFieldOptionsMissingError extends Error {
   constructor() {
     super("All select-style fields need at least one option before publishing");
     this.name = "FormPublishFieldOptionsMissingError";
+  }
+}
+
+export class FormSchemaLockedError extends Error {
+  readonly code = "FORM_SCHEMA_LOCKED" as const;
+  constructor() {
+    super("Form schema is locked — only draft forms can be edited");
+    this.name = "FormSchemaLockedError";
+  }
+}
+
+export class ThemeNotFoundForFormError extends Error {
+  readonly code = "THEME_NOT_FOUND" as const;
+  constructor() {
+    super("Theme not found");
+    this.name = "ThemeNotFoundForFormError";
   }
 }
 
@@ -161,6 +178,36 @@ export class FormService {
       .returning();
     if (!updated) throw new Error("FormService.publish: update returned nothing");
     logger.info("form published", { id: updated.id, userId: args.userId });
+    return updated;
+  }
+
+  async setTheme(args: {
+    id: string;
+    userId: string;
+    themeId: string;
+    version: number;
+  }): Promise<Form> {
+    const existing = await this.getById({ id: args.id, userId: args.userId });
+    if (existing.status !== "draft") throw new FormSchemaLockedError();
+    if (existing.version !== args.version) throw new FormVersionMismatchError();
+
+    const [theme] = await this.db
+      .select({ id: themesTable.id })
+      .from(themesTable)
+      .where(eq(themesTable.id, args.themeId));
+    if (!theme) throw new ThemeNotFoundForFormError();
+
+    const [updated] = await this.db
+      .update(formsTable)
+      .set({ themeId: args.themeId, version: existing.version + 1 })
+      .where(eq(formsTable.id, args.id))
+      .returning();
+    if (!updated) throw new Error("FormService.setTheme: update returned nothing");
+    logger.info("form theme changed", {
+      id: updated.id,
+      userId: args.userId,
+      themeId: args.themeId,
+    });
     return updated;
   }
 

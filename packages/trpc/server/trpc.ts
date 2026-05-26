@@ -19,6 +19,7 @@ const SERVICE_ERROR_CODE_TO_TRPC = {
   FIELD_OPTIONS_REQUIRED: "BAD_REQUEST",
   ACCOUNT_NOT_FOUND: "NOT_FOUND",
   INVALID_ANSWER: "BAD_REQUEST",
+  THEME_NOT_FOUND: "NOT_FOUND",
 } as const satisfies Record<string, TRPCError["code"]>;
 
 type ErrorWithCode = { code: string; message?: string };

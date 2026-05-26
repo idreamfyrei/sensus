@@ -17,6 +17,12 @@ const publishFormInput = z.object({
   version: z.number().int(),
 });
 
+const setThemeInput = z.object({
+  id: z.string().uuid(),
+  themeId: z.string().uuid(),
+  version: z.number().int(),
+});
+
 const controller = new FormsController();
 
 export const formsRouter = router({
@@ -31,4 +37,8 @@ export const formsRouter = router({
   publish: protectedProcedure
     .input(publishFormInput)
     .mutation(({ ctx, input }) => controller.publish(ctx, input)),
+
+  setTheme: protectedProcedure
+    .input(setThemeInput)
+    .mutation(({ ctx, input }) => controller.setTheme(ctx, input)),
 });
