@@ -1,10 +1,11 @@
 import type { IncomingHttpHeaders } from "node:http";
 import { auth } from "@repo/auth";
 import { db, type Database } from "@repo/database";
-import { AccountService, FormService } from "@repo/services";
+import { AccountService, FieldService, FormService } from "@repo/services";
 
 export type Services = {
   forms: FormService;
+  fields: FieldService;
   account: AccountService;
 };
 
@@ -38,6 +39,7 @@ export async function createContext(opts?: {
     db,
     services: {
       forms: new FormService(db),
+      fields: new FieldService(db),
       account: new AccountService(db),
     },
   };

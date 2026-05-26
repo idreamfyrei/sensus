@@ -14,6 +14,10 @@ const SERVICE_ERROR_CODE_TO_TRPC = {
   FORM_FORBIDDEN: "FORBIDDEN",
   FORM_VERSION_MISMATCH: "CONFLICT",
   FORM_NOT_PUBLISHED: "BAD_REQUEST",
+  FORM_SCHEMA_LOCKED: "CONFLICT",
+  FIELD_NOT_FOUND: "NOT_FOUND",
+  FIELD_OPTIONS_REQUIRED: "BAD_REQUEST",
+  ACCOUNT_NOT_FOUND: "NOT_FOUND",
 } as const satisfies Record<string, TRPCError["code"]>;
 
 type ErrorWithCode = { code: string; message?: string };

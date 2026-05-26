@@ -57,7 +57,7 @@ export class FormsController {
   }
 
   async get(ctx: ProtectedContext, input: GetFormInput) {
-    return ctx.services.forms.getById({ id: input.id, userId: ctx.userId });
+    return ctx.services.forms.getByIdWithSchema({ id: input.id, userId: ctx.userId });
   }
 
   async list(ctx: ProtectedContext) {

@@ -15,7 +15,7 @@ export type SubmitInput = {
 
 export class PublicFormController {
   async getBySlug(ctx: Context, input: GetBySlugInput) {
-    return ctx.services.forms.getBySlug({ slug: input.slug });
+    return ctx.services.forms.getBySlugWithSchema({ slug: input.slug });
   }
 
   async submit(ctx: Context, input: SubmitInput) {

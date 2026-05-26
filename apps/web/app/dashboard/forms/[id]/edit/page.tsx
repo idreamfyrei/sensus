@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { FIELD_TYPES_CATALOG } from "@repo/schemas/fields";
 import { trpc } from "~/trpc/client";
+import { AddFieldSection } from "~/components/builder/add-field-section";
+import { FieldCard } from "~/components/builder/field-card";
 
 export default function EditFormPage() {
   const params = useParams<{ id: string }>();
@@ -50,6 +53,9 @@ export default function EditFormPage() {
   const isPublished = formData.status === "published";
   const publicUrl =
     typeof window !== "undefined" ? `${window.location.origin}/f/${formData.slug}` : "";
+
+  // Phase 4: exactly one auto-created section. Phase 5 adds the section UI.
+  const section = formData.sections[0];
 
   const handleCopy = async () => {
     if (!publicUrl) return;
@@ -124,12 +130,30 @@ export default function EditFormPage() {
           </section>
         )}
 
-        <section className="p-6 bg-white border border-neutral-200 rounded-lg">
-          <h2 className="font-medium mb-2">Form builder</h2>
-          <p className="text-sm text-neutral-500">
-            Field editing lands in Phase 4. For now this form has no fields — respondents will see
-            just the title and a Submit button.
-          </p>
+        <section className="space-y-3">
+          <h2 className="font-medium">Fields</h2>
+
+          {section && section.fields.length === 0 && (
+            <div className="text-center py-12 border-2 border-dashed border-neutral-200 rounded-lg">
+              <p className="text-sm text-neutral-500">
+                {isPublished
+                  ? "No fields. Respondents see only the title and Submit."
+                  : "No fields yet. Click below to add one."}
+              </p>
+            </div>
+          )}
+
+          {section?.fields.map((field) => (
+            <FieldCard
+              key={field.id}
+              field={field}
+              hasOptions={FIELD_TYPES_CATALOG[field.type].hasOptions}
+            />
+          ))}
+
+          {section && !isPublished && (
+            <AddFieldSection formId={formData.id} sectionId={section.id} />
+          )}
         </section>
       </div>
     </main>

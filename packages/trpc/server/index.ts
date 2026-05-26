@@ -2,12 +2,14 @@ import { router } from "./trpc";
 
 import { healthRouter } from "./routes/health/health.route";
 import { formsRouter } from "./routes/forms/forms.route";
+import { fieldsRouter } from "./routes/fields/fields.route";
 import { publicFormRouter } from "./routes/public-form/public-form.route";
 import { accountRouter } from "./routes/account/account.route";
 
 export const serverRouter = router({
   health: healthRouter,
   forms: formsRouter,
+  fields: fieldsRouter,
   publicForm: publicFormRouter,
   account: accountRouter,
 });
