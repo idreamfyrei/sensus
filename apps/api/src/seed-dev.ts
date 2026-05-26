@@ -6,6 +6,7 @@ import {
   DEV_USER_CREDENTIALS,
   DEFAULT_THEME_KEY,
 } from "@repo/database";
+import { seedThemes } from "@repo/database/seed-themes";
 import { auth } from "@repo/auth";
 
 async function seed() {
@@ -45,8 +46,10 @@ async function seed() {
     })
     .onConflictDoNothing({ target: themesTable.key });
 
+  const { presetCount } = await seedThemes(db);
+
   console.log(
-    `✅ dev seed complete — user ${DEV_USER_CREDENTIALS.email}, theme key '${DEFAULT_THEME_KEY}'`,
+    `✅ dev seed complete — user ${DEV_USER_CREDENTIALS.email}, theme key '${DEFAULT_THEME_KEY}', ${presetCount} presets`,
   );
 }
 
