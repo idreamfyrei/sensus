@@ -17,7 +17,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { themesTable, user as userTable, type Pool } from "@repo/database";
 import { createTestDb, setupTestDb, cleanTestDb } from "@repo/database/test-utils";
-import { FormService } from "@repo/services";
+import { AccountService, FormService } from "@repo/services";
 
 import { serverRouter } from "../../index";
 import type { Context } from "../../context";
@@ -76,7 +76,7 @@ function makeCtx(userId: string | null): Context {
   return {
     userId,
     db,
-    services: { forms: new FormService(db) },
+    services: { forms: new FormService(db), account: new AccountService(db) },
   };
 }
 

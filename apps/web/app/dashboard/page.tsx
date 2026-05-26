@@ -29,6 +29,21 @@ export default function DashboardPage() {
     router.refresh();
   };
 
+  const deleteAccount = trpc.account.deleteSelf.useMutation({
+    onSuccess: async () => {
+      await authClient.signOut();
+      router.push("/");
+      router.refresh();
+    },
+  });
+
+  const handleDeleteAccount = () => {
+    const ok = window.confirm(
+      "Delete your account?\n\nYour forms and responses will be retained for 30 days, then permanently purged. This cannot be undone.",
+    );
+    if (ok) deleteAccount.mutate();
+  };
+
   return (
     <main className="min-h-screen bg-neutral-50 p-8">
       <div className="max-w-3xl mx-auto">
@@ -112,6 +127,21 @@ export default function DashboardPage() {
             ))}
           </ul>
         )}
+
+        <section className="mt-16 pt-8 border-t border-neutral-200">
+          <h2 className="text-sm font-semibold text-red-700">Danger zone</h2>
+          <p className="text-xs text-neutral-500 mt-1 mb-3">
+            Forms and responses are retained for 30 days, then permanently purged.
+          </p>
+          <button
+            type="button"
+            onClick={handleDeleteAccount}
+            disabled={deleteAccount.isPending}
+            className="px-3 py-2 text-sm border border-red-200 text-red-700 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {deleteAccount.isPending ? "Deleting…" : "Delete account"}
+          </button>
+        </section>
       </div>
     </main>
   );
