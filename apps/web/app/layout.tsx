@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Fraunces } from "next/font/google";
 import "./globals.css";
 import { GlobalProviders } from "~/providers/global";
 
@@ -11,10 +12,16 @@ const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
 });
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+  axes: ["opsz", "SOFT"],
+});
 
 export const metadata: Metadata = {
-  title: "Sensus",
-  description: "Build dynamic forms, publish shareable links, collect responses.",
+  title: "Sensus — forms with a feeling",
+  description: "A form builder for people who care how it feels.",
 };
 
 export default function RootLayout({
@@ -25,7 +32,7 @@ export default function RootLayout({
   return (
     // next-themes sets the `class` client-side; suppress the expected mismatch.
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable}`}>
         <GlobalProviders>{children}</GlobalProviders>
       </body>
     </html>

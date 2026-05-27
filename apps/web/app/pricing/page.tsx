@@ -39,7 +39,7 @@ const TIERS: Tier[] = [
       "Remove Sensus branding",
       "CSV export + raw response API",
       "Priority email support",
-      "Cloudinary asset upload",
+      "Image and logo uploads",
     ],
     cta: { label: "Start free trial", href: "/sign-up" },
     highlighted: true,
