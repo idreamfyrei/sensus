@@ -150,7 +150,6 @@ export class FormService {
         .returning();
       if (!row) throw new Error("FormService.create: insert returned nothing");
 
-      // Auto-create the default section. Phase 5 will expose section editing.
       await tx.insert(formSectionsTable).values({ formId: row.id, order: 0 });
 
       logger.info("form created", { id: row.id, userId: args.userId, slug });
@@ -184,7 +183,6 @@ export class FormService {
     const existing = await this.getById({ id: args.id, userId: args.userId });
     if (existing.version !== args.version) throw new FormVersionMismatchError();
 
-    // Publish gate: every select-style field must have ≥1 option.
     const selectFields = await this.db
       .select({ id: formFieldsTable.id, type: formFieldsTable.type })
       .from(formFieldsTable)
@@ -257,7 +255,6 @@ export class FormService {
     logger.info("form soft-deleted", { id: existing.id, userId: args.userId });
   }
 
-  /** Forms visible in /explore: public + published + non-deleted. */
   async listPublic(args?: { limit?: number }): Promise<Array<Form & { theme: Theme }>> {
     const limit = args?.limit ?? 100;
     const rows = await this.db
@@ -274,7 +271,6 @@ export class FormService {
     return this.attachThemes(rows);
   }
 
-  /** Forms in /templates: isTemplate=true + public + published. */
   async listTemplates(args?: { limit?: number }): Promise<Array<Form & { theme: Theme }>> {
     const limit = args?.limit ?? 100;
     const rows = await this.db
@@ -311,11 +307,6 @@ export class FormService {
     return updated;
   }
 
-  /**
-   * Clone a published template into a new draft form owned by the caller.
-   * Copies sections, fields, options, and conditions. Slug is regenerated;
-   * status reset to draft; isTemplate=false.
-   */
   async cloneTemplate(args: { templateId: string; userId: string }): Promise<Form> {
     const [template] = await this.db
       .select()
@@ -739,7 +730,6 @@ export class FormService {
     return { responseId: submission.responseId };
   }
 
-  /** Load sections + fields + options for a form and stitch into a tree. */
   private async attachSchema(form: Form): Promise<FormWithSchema> {
     const [theme] = await this.db
       .select()

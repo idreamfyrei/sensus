@@ -30,8 +30,6 @@ type Props<T> = {
 const baseInput =
   "w-full px-3 py-2 border border-neutral-300 rounded focus:outline-none focus:border-neutral-900 transition";
 
-// ─── short_text / long_text / email ─────────────────────────────────────────
-
 export function ShortTextInput({ field, value, onChange }: Props<string>) {
   return (
     <input
@@ -70,8 +68,6 @@ export function EmailInput({ field, value, onChange }: Props<string>) {
   );
 }
 
-// ─── number ─────────────────────────────────────────────────────────────────
-
 export function NumberInput({ field, value, onChange }: Props<number | undefined>) {
   return (
     <input
@@ -91,8 +87,6 @@ export function NumberInput({ field, value, onChange }: Props<number | undefined
     />
   );
 }
-
-// ─── single_select (radio) ──────────────────────────────────────────────────
 
 export function SingleSelectInput({ field, value, onChange }: Props<string>) {
   return (
@@ -115,8 +109,6 @@ export function SingleSelectInput({ field, value, onChange }: Props<string>) {
     </div>
   );
 }
-
-// ─── multi_select (checkboxes) ──────────────────────────────────────────────
 
 export function MultiSelectInput({ field, value, onChange }: Props<string[]>) {
   const selected = value ?? [];
@@ -144,8 +136,6 @@ export function MultiSelectInput({ field, value, onChange }: Props<string[]>) {
   );
 }
 
-// ─── checkbox (single boolean confirmation) ─────────────────────────────────
-
 export function CheckboxSingleInput({ field, value, onChange }: Props<boolean>) {
   return (
     <label className="flex items-center gap-2 cursor-pointer">
@@ -159,8 +149,6 @@ export function CheckboxSingleInput({ field, value, onChange }: Props<boolean>) 
   );
 }
 
-// ─── dropdown ───────────────────────────────────────────────────────────────
-
 export function DropdownInput({ field, value, onChange }: Props<string>) {
   return (
     <select value={value ?? ""} onChange={(e) => onChange(e.target.value)} className={baseInput}>
@@ -173,8 +161,6 @@ export function DropdownInput({ field, value, onChange }: Props<string>) {
     </select>
   );
 }
-
-// ─── rating (star buttons) ──────────────────────────────────────────────────
 
 export function RatingInput({ field, value, onChange }: Props<number | undefined>) {
   const max = field.maxRating ?? 5;
@@ -212,8 +198,6 @@ export function RatingInput({ field, value, onChange }: Props<number | undefined
     </div>
   );
 }
-
-// ─── date ───────────────────────────────────────────────────────────────────
 
 export function DateInput({ field, value, onChange }: Props<string>) {
   return (

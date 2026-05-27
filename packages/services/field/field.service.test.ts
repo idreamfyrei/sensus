@@ -72,7 +72,6 @@ afterAll(async () => {
 
 async function makeDraftForm(userId: string) {
   const form = await formSvc.create({ userId, input: { title: "F", themeId } });
-  // form.create auto-creates the default section; load it.
   const [section] = await db
     .select()
     .from(formSectionsTable)
@@ -239,7 +238,6 @@ describe("FieldService.setOptions", () => {
     expect(updated).toHaveLength(1);
     expect(updated[0]?.value).toBe("c");
 
-    // Old options soft-deleted, not hard-deleted.
     const all = await db
       .select()
       .from(fieldOptionsTable)

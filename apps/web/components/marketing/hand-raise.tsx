@@ -3,11 +3,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
-/**
- * Skin tones picked from the Fitzpatrick palette, cycled to represent
- * "anyone, raising a hand". The line art (sleeve + outline) stays
- * constant; only the palm fill crossfades.
- */
 const SKIN_TONES = ["#f4d4ad", "#e6b58c", "#c89570", "#9a6b46", "#5f3e22"];
 
 const STROKE = "#1a1a1a";

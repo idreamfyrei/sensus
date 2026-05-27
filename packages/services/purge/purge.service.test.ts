@@ -43,7 +43,6 @@ afterAll(async () => {
 
 describe("PurgeService", () => {
   it("hard-deletes a user with forms/fields/responses; leaves other users alone", async () => {
-    // Seed two users; only USER is expired.
     await db.insert(userTable).values([
       { ...USER, deletedAt: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000) },
       {
@@ -99,19 +98,16 @@ describe("PurgeService", () => {
     });
     await db.insert(responsesTable).values({ formId: form.id });
 
-    // Run the purge.
     const purged = await svc.purgeExpiredUsers(30);
 
     expect(purged).toEqual([USER.id]);
 
-    // User & all owned rows gone.
     const userRows = await db.select().from(userTable).where(eq(userTable.id, USER.id));
     expect(userRows).toHaveLength(0);
 
     const formRows = await db.select().from(formsTable).where(eq(formsTable.id, form.id));
     expect(formRows).toHaveLength(0);
 
-    // Other user untouched.
     const keep = await db.select().from(userTable).where(eq(userTable.id, "user_keep"));
     expect(keep).toHaveLength(1);
   });

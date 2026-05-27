@@ -190,7 +190,6 @@ export class FieldService {
     });
   }
 
-  /** Wipe-and-replace all options for a select-style field. */
   async setOptions(args: {
     fieldId: string;
     userId: string;

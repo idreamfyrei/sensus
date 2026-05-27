@@ -106,7 +106,6 @@ export class AnalyticsService {
     const totalSubmits = submits.length;
     const completionRate = totalViews > 0 ? totalSubmits / totalViews : 0;
 
-    // Per-option distribution for select-style fields.
     const fields = await this.db
       .select()
       .from(formFieldsTable)

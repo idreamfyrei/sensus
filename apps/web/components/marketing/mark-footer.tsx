@@ -8,11 +8,6 @@ import { motion, AnimatePresence } from "motion/react";
 const SERIF = "var(--font-fraunces), Georgia, serif";
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-/**
- * Footer that opens with a tiny form. Two blanks resolve into a thank-you.
- * Below: real link columns, a quiet status line, and the wordmark used as
- * background texture rather than as a centerpiece.
- */
 export function MarkFooter() {
   const [topic, setTopic] = useState("");
   const [feel, setFeel] = useState("");

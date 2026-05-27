@@ -1,18 +1,3 @@
-/**
- * tRPC-caller integration tests for the forms slice.
- *
- * Builds the same `serverRouter` apps/api mounts, but calls procedures
- * via `serverRouter.createCaller(ctx)` — no HTTP, no Express. Every layer
- * still runs: input Zod validation, middleware (auth + service-error mapper),
- * controller, service, db.
- *
- * Proves:
- *   - protectedProcedure rejects anonymous callers with UNAUTHORIZED
- *   - forms.create roundtrips a real form through to Postgres
- *   - forms.publish optimistic-concurrency surfaces as CONFLICT
- *   - publicForm.getBySlug + submit work without a user
- *   - service errors are mapped to the right TRPCError codes
- */
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { eq, themesTable, user as userTable, type Pool } from "@repo/database";
@@ -81,8 +66,6 @@ afterAll(async () => {
   await pool.end();
 });
 
-/** Build a Context manually — same shape `createContext` returns, but with
- *  the user-id we want to test (or `null` for anonymous). */
 function makeCtx(userId: string | null): Context {
   return {
     userId,
@@ -105,8 +88,6 @@ function makeCtx(userId: string | null): Context {
 
 const validInput = () => ({ title: "Test Form", themeId });
 
-// ─── Auth boundary ──────────────────────────────────────────────────────────
-
 describe("auth middleware", () => {
   it("forms.create rejects an anonymous caller with UNAUTHORIZED", async () => {
     const caller = serverRouter.createCaller(makeCtx(null));
@@ -120,8 +101,6 @@ describe("auth middleware", () => {
     await expect(caller.forms.list()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 });
-
-// ─── Creator path (forms router) ────────────────────────────────────────────
 
 describe("forms.create", () => {
   it("creates a form when called by an authenticated user", async () => {
@@ -144,7 +123,6 @@ describe("forms.create", () => {
 
 describe("forms.list", () => {
   it("returns only the calling user's forms", async () => {
-    // Two forms from the test user.
     const caller = serverRouter.createCaller(makeCtx(TEST_USER.id));
     await caller.forms.create({ title: "Mine 1", themeId });
     await caller.forms.create({ title: "Mine 2", themeId });
@@ -178,11 +156,9 @@ describe("forms.publish", () => {
   });
 
   it("maps a non-owner publish attempt to FORBIDDEN", async () => {
-    // First user creates the form.
     const ownerCaller = serverRouter.createCaller(makeCtx(TEST_USER.id));
     const created = await ownerCaller.forms.create(validInput());
 
-    // Seed a different user and try to publish as them.
     const OTHER_USER_ID = "user_other";
     await db.insert(userTable).values({
       id: OTHER_USER_ID,
@@ -264,8 +240,6 @@ describe("themes.list", () => {
   });
 });
 
-// ─── Public path (publicForm router) ────────────────────────────────────────
-
 describe("publicForm.getBySlug", () => {
   it("returns the form for a published slug (anonymous)", async () => {
     const owner = serverRouter.createCaller(makeCtx(TEST_USER.id));
@@ -316,11 +290,8 @@ describe("publicForm.submit", () => {
   });
 });
 
-// ─── Type bridge sanity ─────────────────────────────────────────────────────
-
 describe("ServerRouter type export", () => {
   it("is a TRPCError type the client can match on", () => {
-    // Compile-time check, runtime asserts shape exists.
     expect(typeof TRPCError).toBe("function");
   });
 });

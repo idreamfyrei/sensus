@@ -15,7 +15,6 @@ export default function Home() {
       <main className="min-h-screen bg-[#faf8f3] text-neutral-900 overflow-x-hidden">
         <HeroForm />
 
-        {/* FEATURE DECK */}
         <section className="bg-[#0e0e0e] py-28 sm:py-40 relative overflow-hidden">
           <div
             aria-hidden
@@ -52,10 +51,6 @@ export default function Home() {
   );
 }
 
-/* ---------------------------------------------------------------- */
-/* BENTO                                                              */
-/* ---------------------------------------------------------------- */
-
 function Bento() {
   return (
     <section className="px-6 py-28 sm:py-40">
@@ -77,9 +72,7 @@ function Bento() {
           </p>
         </div>
 
-        {/* Bento: 6-col grid, two large rows, then a row of three equal chips */}
         <div className="grid grid-cols-1 sm:grid-cols-6 gap-3 sm:gap-4 auto-rows-[150px]">
-          {/* Row 1 (h=2): no-wall + wedding */}
           <BentoCell className="sm:col-span-4 sm:row-span-2 bg-[#0e0e0e] text-[#f2ead8]">
             <div className="relative flex h-full flex-col justify-between p-7 sm:p-9">
               <div className="flex items-center justify-between">
@@ -318,10 +311,6 @@ function LiveStrip() {
   );
 }
 
-/* ---------------------------------------------------------------- */
-/* FINAL CTA                                                          */
-/* ---------------------------------------------------------------- */
-
 function FinalCTA() {
   return (
     <section className="px-6 pb-32 sm:pb-40">
@@ -365,10 +354,6 @@ function FinalCTA() {
     </section>
   );
 }
-
-/* ---------------------------------------------------------------- */
-/* Shared atoms                                                       */
-/* ---------------------------------------------------------------- */
 
 function Eyebrow({
   children,

@@ -4,7 +4,6 @@ import { db, user, session, account, verification } from "@repo/database";
 
 const authSchema = { user, session, account, verification };
 
-// Accept both canonical and legacy env var names.
 const googleClientId = process.env.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_OAUTH_CLIENT_ID;
 const googleClientSecret =
   process.env.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_OAUTH_CLIENT_SECRET;

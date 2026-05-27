@@ -2,20 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { eq, themesTable, DEFAULT_THEME_KEY } from "@repo/database";
 import type { Context } from "../../context";
 
-/**
- * Creator-scoped form operations. Every method takes a Context that has
- * already passed through `authMiddleware`, so `ctx.userId` is guaranteed
- * to be a string here.
- */
 type ProtectedContext = Context & { userId: string };
 
 export type CreateFormInput = {
   title: string;
   description?: string | null;
-  /**
-   * Optional — when omitted, the controller looks up the seeded `default`
-   * theme. Phase 4 will add a theme-picker UI and make this mandatory.
-   */
   themeId?: string;
 };
 
@@ -38,12 +29,9 @@ export type SetTemplateInput = { id: string; isTemplate: boolean };
 export type CloneTemplateInput = { templateId: string };
 
 export class FormsController {
-  /** Resolve a themeId — either the one the client provided, or the
-   *  seeded default. Throws if no default exists (db:seed-dev wasn't run). */
   private async resolveThemeId(ctx: ProtectedContext, themeId?: string): Promise<string> {
     if (themeId) return themeId;
 
-    // themesTable has no deletedAt — themes are seeded and immutable in Phase 2.
     const [theme] = await ctx.db
       .select({ id: themesTable.id })
       .from(themesTable)

@@ -31,7 +31,7 @@ async function seed() {
     .values({
       key: DEFAULT_THEME_KEY,
       name: "Default",
-      description: "Plain neutral theme used for the Phase 2 vertical slice.",
+      description: "Plain neutral theme used for local development.",
       bg: "#ffffff",
       surface: "#f5f5f5",
       primary: "#0f172a",

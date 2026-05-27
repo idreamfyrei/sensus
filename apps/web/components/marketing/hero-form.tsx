@@ -3,15 +3,9 @@ import Link from "next/link";
 const SERIF = "var(--font-fraunces), Georgia, serif";
 const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
-/**
- * The hero is the product. A life-size ballot is handed to the visitor.
- * The three CTAs are the ballot's three answer options. Voting begins
- * the user's path into Sensus.
- */
 export function HeroForm() {
   return (
     <section className="relative px-4 sm:px-6 pt-14 pb-24 sm:pt-20 sm:pb-32 overflow-hidden">
-      {/* paper grain over warm cream */}
       <span
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-60"
@@ -20,7 +14,6 @@ export function HeroForm() {
           backgroundSize: "4px 4px",
         }}
       />
-      {/* soft warm wash */}
       <span
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -30,14 +23,12 @@ export function HeroForm() {
         }}
       />
 
-      {/* tape strips above the ballot, suggesting it's been stuck up on a wall */}
       <TapeStrips />
 
       <div className="relative max-w-5xl mx-auto">
         <Ballot />
       </div>
 
-      {/* below-ballot legend */}
       <div className="relative max-w-5xl mx-auto mt-12 sm:mt-16 grid sm:grid-cols-12 gap-6 sm:gap-10 items-start">
         <p
           className="sm:col-span-7 text-base sm:text-lg text-neutral-700 leading-relaxed"
@@ -60,20 +51,15 @@ export function HeroForm() {
   );
 }
 
-/* ----------------------------- Ballot ----------------------------- */
-
 function Ballot() {
   return (
     <div className="relative" style={{ transform: "rotate(-0.8deg)" }}>
-      {/* shadow plate underneath, slightly offset for paper depth */}
       <div
         aria-hidden
         className="absolute inset-0 rounded-[28px] bg-[#e9dfc6] translate-x-1.5 translate-y-2 -z-10"
       />
 
-      {/* outer paper */}
       <div className="relative bg-[#fdfaf0] rounded-[28px] ring-1 ring-black/[0.07] shadow-[0_40px_80px_-30px_rgba(60,40,20,0.28)] overflow-hidden">
-        {/* top meta strip */}
         <div
           className="px-6 sm:px-12 pt-6 pb-4 flex items-center justify-between gap-4 text-[10px] tracking-[0.28em] uppercase text-neutral-500 border-b border-dashed border-neutral-300/70"
           style={{ fontFamily: MONO }}
@@ -86,9 +72,7 @@ function Ballot() {
           <span>№ 14,237</span>
         </div>
 
-        {/* body */}
         <div className="relative px-6 sm:px-12 md:px-16 py-10 sm:py-14">
-          {/* vertical guide rail (decorative left margin like ruled paper) */}
           <span
             aria-hidden
             className="absolute left-4 sm:left-6 top-10 bottom-10 w-px bg-neutral-300/60 hidden sm:block"
@@ -122,7 +106,6 @@ function Ballot() {
             Mark one. Or all three. <em className="italic">We won&apos;t tell.</em>
           </p>
 
-          {/* options */}
           <div className="mt-10 sm:mt-12 space-y-2 sm:space-y-3">
             <BallotOption letter="A" href="/sign-up" accent="#D85A28">
               The kind I&apos;d build <em className="italic">myself</em>.
@@ -136,7 +119,6 @@ function Ballot() {
           </div>
         </div>
 
-        {/* signing row */}
         <div
           className="px-6 sm:px-12 md:px-16 py-5 sm:py-6 border-t border-dashed border-neutral-300/70 grid grid-cols-3 gap-3 sm:gap-6 text-[10px] tracking-[0.22em] uppercase text-neutral-500"
           style={{ fontFamily: MONO }}
@@ -147,17 +129,12 @@ function Ballot() {
         </div>
       </div>
 
-      {/* APPROVED stamp */}
       <ApprovedStamp />
-      {/* free / no card sticker */}
       <FreeChip />
-      {/* page corner fold */}
       <CornerFold />
     </div>
   );
 }
-
-/* ----------------------------- bits ----------------------------- */
 
 function BallotOption({
   letter,
@@ -175,12 +152,10 @@ function BallotOption({
       href={href}
       className="group flex items-center gap-4 sm:gap-6 py-3 sm:py-4 px-3 -mx-3 rounded-2xl hover:bg-neutral-900/[0.025] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
     >
-      {/* checkbox */}
       <span className="relative inline-flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-md ring-[2px] ring-neutral-900 transition-colors duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:bg-neutral-900">
         <CheckIcon className="h-4 w-4 text-[#fdfaf0] opacity-0 -rotate-12 scale-75 group-hover:opacity-100 group-hover:rotate-0 group-hover:scale-100 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]" />
       </span>
 
-      {/* letter */}
       <span
         className="text-xs tracking-[0.3em] uppercase text-neutral-400 w-5 sm:w-6"
         style={{ fontFamily: MONO }}
@@ -188,7 +163,6 @@ function BallotOption({
         {letter}
       </span>
 
-      {/* option text */}
       <span
         className="flex-1 text-xl sm:text-3xl leading-snug text-neutral-900"
         style={{ fontFamily: SERIF, fontWeight: 500, letterSpacing: "-0.01em" }}
@@ -196,7 +170,6 @@ function BallotOption({
         {children}
       </span>
 
-      {/* arrow */}
       <span className="relative inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full ring-1 ring-neutral-300 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-1 group-hover:ring-transparent overflow-hidden">
         <span
           aria-hidden
@@ -230,8 +203,6 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
     </span>
   );
 }
-
-/* ----------------------------- decorations ----------------------------- */
 
 function ApprovedStamp() {
   return (
@@ -270,7 +241,6 @@ function FreeChip() {
 }
 
 function CornerFold() {
-  // page-corner peel in top-left
   return (
     <div
       aria-hidden
@@ -297,7 +267,6 @@ function CornerFold() {
 }
 
 function TapeStrips() {
-  // two strips of "tape" at the top edges of the ballot, like the page was stuck up on a wall
   return (
     <div aria-hidden className="relative max-w-5xl mx-auto h-0">
       <span
@@ -319,8 +288,6 @@ function TapeStrips() {
     </div>
   );
 }
-
-/* ----------------------------- icons ----------------------------- */
 
 function ArrowIcon({ className = "" }: { className?: string }) {
   return (

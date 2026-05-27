@@ -1,15 +1,4 @@
 import { defineConfig, devices } from "@playwright/test";
-
-/**
- * Phase 2 e2e config.
- *
- * Tests share one Postgres DB (the local dev DB), so:
- *   - workers: 1 + fullyParallel: false
- *   - tests use unique form titles to avoid collisions with prior runs
- *
- * `webServer` auto-starts api + web. If they're already running (CI: never,
- * local: usually), `reuseExistingServer` short-circuits to save time.
- */
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,

@@ -1,11 +1,3 @@
-/**
- * Curated showcase content seeded by `pnpm db:seed-demo`.
- *
- * Builds out the demo creator accounts and a small museum of forms — one
- * per Sensus theme — each with realistic seeded responses and views.
- * Idempotent: re-running is safe; existing demo forms are skipped.
- */
-
 import {
   and,
   eq,
@@ -58,7 +50,6 @@ type DemoForm = {
 };
 
 const DEMO_FORMS: DemoForm[] = [
-  // -------- 1. Vaporwave: year-end favorites --------
   {
     slug: "year-end-favorites",
     title: "Year-end favorites",
@@ -117,7 +108,6 @@ const DEMO_FORMS: DemoForm[] = [
     viewCount: 142,
   },
 
-  // -------- 2. Pixel: game jam signup --------
   {
     slug: "pixel-jam-26",
     title: "Pixel Jam '26 sign-up",
@@ -182,7 +172,6 @@ const DEMO_FORMS: DemoForm[] = [
     viewCount: 318,
   },
 
-  // -------- 3. Museum: reading club --------
   {
     slug: "reading-room",
     title: "Reading room sign-up",
@@ -235,7 +224,6 @@ const DEMO_FORMS: DemoForm[] = [
     viewCount: 86,
   },
 
-  // -------- 4. Anime: con feedback --------
   {
     slug: "anime-con-feedback",
     title: "How was the con?",
@@ -288,7 +276,6 @@ const DEMO_FORMS: DemoForm[] = [
     viewCount: 421,
   },
 
-  // -------- 5. Terminal: studio standup (unlisted) --------
   {
     slug: "studio-standup",
     title: "Studio standup",
@@ -345,7 +332,6 @@ const DEMO_FORMS: DemoForm[] = [
     viewCount: 64,
   },
 
-  // -------- 6. Brutalist: after-show notes --------
   {
     slug: "after-show-notes",
     title: "After-show notes",
@@ -466,7 +452,6 @@ async function seedOneForm(args: {
     return;
   }
 
-  // form
   const [insertedForm] = await db
     .insert(formsTable)
     .values({
@@ -485,14 +470,12 @@ async function seedOneForm(args: {
     .returning();
   if (!insertedForm) throw new Error(`failed to insert form ${slug}`);
 
-  // section
   const [section] = await db
     .insert(formSectionsTable)
     .values({ formId: insertedForm.id, order: 0 })
     .returning();
   if (!section) throw new Error(`failed to insert section for ${slug}`);
 
-  // fields
   const insertedFieldIds: string[] = [];
   for (let i = 0; i < form.fields.length; i++) {
     const f = form.fields[i]!;
@@ -531,7 +514,6 @@ async function seedOneForm(args: {
     }
   }
 
-  // responses + answers
   for (const responseRow of form.responses) {
     const submittedAt = new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000));
     const [resp] = await db
@@ -559,7 +541,6 @@ async function seedOneForm(args: {
     }
   }
 
-  // views, spread across the last 30 days
   const viewRows: Array<{ formId: string; viewedAt: Date }> = [];
   for (let i = 0; i < form.viewCount; i++) {
     viewRows.push({
@@ -567,7 +548,6 @@ async function seedOneForm(args: {
       viewedAt: new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)),
     });
   }
-  // batch insert in chunks of 100 to keep statements reasonable
   for (let i = 0; i < viewRows.length; i += 100) {
     await db.insert(formViewsTable).values(viewRows.slice(i, i + 100));
   }

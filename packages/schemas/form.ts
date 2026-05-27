@@ -35,8 +35,6 @@ export const updateFormInput = createInsertSchema(formsTable, {
     version: z.number().int(),
   });
 
-// Slug edits are gated to draft-only (enforced server-side); this schema
-// just validates the wire shape.
 export const setFormSlugInput = z.object({
   id: z.string().uuid(),
   version: z.number().int(),

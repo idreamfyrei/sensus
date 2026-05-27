@@ -1,23 +1,7 @@
-/**
- * FormService integration tests.
- *
- * Runs against the real `sensus_test` Postgres. Each test starts with an empty
- * DB (truncated in beforeEach), then seeds the minimum state it needs
- * (one user, one theme) before exercising the service.
- *
- * What this proves:
- *   - The class can be constructed with just a db handle → testable in
- *     isolation, no HTTP server required.
- *   - Slug generation is deterministic in shape (kebab + 6-char suffix).
- *   - Ownership checks fire (FormForbiddenError) before any read leaks data.
- *   - Optimistic concurrency catches stale publishes.
- *   - Submit only succeeds against a published form.
- */
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
 import { eq, themesTable, user as userTable, type Pool } from "@repo/database";
 import { createTestDb, setupTestDb, cleanTestDb } from "@repo/database/test-utils";
 
-// The db instance we hand to FormService — same shape `createTestDb` returns.
 type TestDb = ReturnType<typeof createTestDb>["db"];
 
 import {
@@ -30,8 +14,6 @@ import {
   ThemeNotFoundForFormError,
 } from "./form.service";
 import { kebab, generateSlug } from "./slug";
-
-// ─── Fixtures and lifecycle ─────────────────────────────────────────────────
 
 let db: TestDb;
 let pool: Pool;
@@ -87,8 +69,6 @@ afterAll(async () => {
   await pool.end();
 });
 
-// ─── Slug helpers (pure unit) ───────────────────────────────────────────────
-
 describe("slug.kebab", () => {
   it("kebab-cases a plain title", () => {
     expect(kebab("My Anime Survey")).toBe("my-anime-survey");
@@ -122,8 +102,6 @@ describe("slug.generateSlug", () => {
   });
 });
 
-// ─── FormService.create ─────────────────────────────────────────────────────
-
 describe("FormService.create", () => {
   it("creates a draft form with a generated slug and version 1", async () => {
     const form = await svc.create({
@@ -138,8 +116,6 @@ describe("FormService.create", () => {
     expect(form.userId).toBe(USER_A.id);
   });
 });
-
-// ─── FormService.getById ────────────────────────────────────────────────────
 
 describe("FormService.getById", () => {
   it("returns the form when called by the owner", async () => {
@@ -174,7 +150,6 @@ describe("FormService.getById", () => {
       userId: USER_A.id,
       input: { title: "X", themeId },
     });
-    // Mark as soft-deleted via raw drizzle (no service method for this yet).
     const { eq, formsTable } = await import("@repo/database");
     await db.update(formsTable).set({ deletedAt: new Date() }).where(eq(formsTable.id, created.id));
 
@@ -183,8 +158,6 @@ describe("FormService.getById", () => {
     );
   });
 });
-
-// ─── FormService.listByUser ─────────────────────────────────────────────────
 
 describe("FormService.listByUser", () => {
   it("returns only the calling user's forms", async () => {
@@ -203,8 +176,6 @@ describe("FormService.listByUser", () => {
     expect(aForms.every((f) => f.userId === USER_A.id)).toBe(true);
   });
 });
-
-// ─── FormService.publish ────────────────────────────────────────────────────
 
 describe("FormService.publish", () => {
   it("flips status to published and bumps version", async () => {
@@ -245,8 +216,6 @@ describe("FormService.publish", () => {
     ).rejects.toThrow(FormForbiddenError);
   });
 });
-
-// ─── FormService.setTheme ───────────────────────────────────────────────────
 
 describe("FormService.setTheme", () => {
   async function seedAltTheme(key: "pixel"): Promise<string> {
@@ -357,8 +326,6 @@ describe("FormService.setTheme", () => {
     ).rejects.toThrow(FormForbiddenError);
   });
 });
-
-// ─── FormService.submit (public path) ───────────────────────────────────────
 
 describe("FormService.submit", () => {
   it("creates a response when the form is published", async () => {

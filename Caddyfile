@@ -1,36 +1,19 @@
-# Sensus reverse proxy.
-#
-# Replace `<your-domain>` with the registered domain before bringing the
-# stack up. Caddy handles automatic Let's Encrypt provisioning on first
-# request, so both subdomains need DNS A records pointing at the VPS.
-#
-# Optional: set ADMIN_EMAIL in the env so Let's Encrypt has a contact
-# address for renewal notices.
-
 {
-	# global options
 	email {$ADMIN_EMAIL}
 }
 
-# -------- Web app: app.<your-domain> -------------------------------------
 app.{$DOMAIN} {
 	encode zstd gzip
 	header {
-		# basic hardening
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "interest-cohort=()"
-		# strip the server header so we don't advertise the stack
 		-Server
 	}
 	reverse_proxy web:3000
 }
 
-# -------- API: api.<your-domain> -----------------------------------------
-# Exposes the tRPC endpoints, the Better Auth handler, the Scalar docs at
-# /docs, and the OpenAPI schema at /openapi.json. CORS is enforced on the
-# API server itself (WEB_ORIGIN env var), Caddy just forwards.
 api.{$DOMAIN} {
 	encode zstd gzip
 	header {
@@ -42,7 +25,6 @@ api.{$DOMAIN} {
 	reverse_proxy api:8000
 }
 
-# -------- Apex redirect --------------------------------------------------
 {$DOMAIN} {
 	redir https://app.{$DOMAIN}{uri} permanent
 }

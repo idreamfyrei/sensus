@@ -5,7 +5,6 @@ import { logger } from "@repo/logger";
 
 const purge = new PurgeService(db);
 
-// Daily at 03:00 server time.
 const SCHEDULE = "0 3 * * *";
 
 export function startPurgeCron() {

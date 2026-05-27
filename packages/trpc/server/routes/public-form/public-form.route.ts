@@ -20,12 +20,10 @@ const submitInput = z.object({
 const controller = new PublicFormController();
 
 export const publicFormRouter = router({
-  /** Anonymous: load a form by its public slug. */
   getBySlug: publicProcedure
     .input(getBySlugInput)
     .query(({ ctx, input }) => controller.getBySlug(ctx, input)),
 
-  /** Anonymous: submit a response. Phase 2 supports short_text answers. */
   submit: publicProcedure
     .input(submitInput)
     .mutation(({ ctx, input }) => controller.submit(ctx, input)),

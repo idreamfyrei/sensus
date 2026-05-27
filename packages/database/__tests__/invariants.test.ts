@@ -79,7 +79,6 @@ async function seed() {
   return { theme };
 }
 
-// ──────────────────────────────────────────────────────────────────────────
 describe("forms.slug partial-unique invariant", () => {
   it("rejects a duplicate slug among active forms", async () => {
     const { theme } = await seed();
@@ -127,7 +126,6 @@ describe("forms.slug partial-unique invariant", () => {
   });
 });
 
-// ──────────────────────────────────────────────────────────────────────────
 describe("user.email partial-unique invariant", () => {
   it("rejects a duplicate email among active users", async () => {
     await db.insert(userTable).values(TEST_USER);
@@ -146,7 +144,6 @@ describe("user.email partial-unique invariant", () => {
   });
 });
 
-// ──────────────────────────────────────────────────────────────────────────
 describe("field_conditions target XOR CHECK constraint", () => {
   let formId: string;
   let sectionId: string;
@@ -241,7 +238,6 @@ describe("field_conditions target XOR CHECK constraint", () => {
   });
 });
 
-// ──────────────────────────────────────────────────────────────────────────
 describe("FK ON DELETE RESTRICT", () => {
   it("refuses to hard-delete a form that still has child fields", async () => {
     const { theme } = await seed();
@@ -274,7 +270,6 @@ describe("FK ON DELETE RESTRICT", () => {
   });
 });
 
-// ──────────────────────────────────────────────────────────────────────────
 describe("notDeleted() helper", () => {
   it("excludes soft-deleted rows from selects", async () => {
     const { theme } = await seed();

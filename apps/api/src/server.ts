@@ -18,7 +18,6 @@ const openApiDocument = generateOpenApiDocument(serverRouter, {
   baseUrl: env.BASE_URL.concat("/api"),
 });
 
-// Browsers reject `Allow-Origin: *` with `credentials: include`. Specific origin required.
 const isProd = env.NODE_ENV === "prod" || env.NODE_ENV === "production";
 const allowedOrigins = isProd
   ? (process.env.WEB_ORIGIN?.split(",") ?? [])

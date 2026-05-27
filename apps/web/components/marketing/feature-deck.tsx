@@ -119,7 +119,6 @@ export function FeatureDeck() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Outside click resets
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
       if (!containerRef.current) return;
@@ -131,7 +130,6 @@ export function FeatureDeck() {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  // Esc resets
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") setActiveId(null);
@@ -144,7 +142,6 @@ export function FeatureDeck() {
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* Desktop deck */}
       <div className="hidden md:block w-full">
         <div
           ref={containerRef}
@@ -156,10 +153,6 @@ export function FeatureDeck() {
               const isActive = card.id === activeId;
               const fan = FAN_POSITIONS[i] ?? FAN_POSITIONS[0] ?? { x: 0, y: 0, rot: 0 };
 
-              // When something is active, non-active cards peek up from
-              // BEHIND the active card: they're spread side-by-side in a
-              // row below the deck center, only their top portions visible
-              // because the active card overlaps them.
               const otherIndex = CARDS.filter((c) => c.id !== activeId).findIndex(
                 (c) => c.id === card.id,
               );
@@ -179,7 +172,6 @@ export function FeatureDeck() {
                 rotate = 0;
                 scale = 1;
               } else if (anyActive) {
-                // peek out from below the active card
                 x = peekX;
                 y = 200;
                 rotate = peekRotate;
