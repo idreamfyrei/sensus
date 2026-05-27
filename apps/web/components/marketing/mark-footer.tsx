@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 const SERIF = "var(--font-fraunces), Georgia, serif";
@@ -24,10 +25,10 @@ export function MarkFooter() {
   };
 
   const inputClass =
-    "inline-block bg-transparent border-0 border-b border-current/40 focus:border-current focus:outline-none px-1 text-current placeholder:text-current/40 transition-colors";
+    "inline-block min-h-12 bg-transparent border-0 border-b border-current/40 focus:border-current focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5DBA85] focus-visible:ring-offset-4 focus-visible:ring-offset-[#0e0e0e] rounded-sm px-1 text-current placeholder:text-current/40 transition-colors";
 
   return (
-    <footer className="relative bg-[#0e0e0e] text-[#f2ead8] pt-28 pb-10 overflow-hidden">
+    <footer className="relative overflow-hidden bg-[#0e0e0e] pt-24 pb-10 text-[#f2ead8] sm:pt-28">
       {/* dotted texture */}
       <span
         aria-hidden
@@ -54,7 +55,7 @@ export function MarkFooter() {
         sensus
       </div>
 
-      <div className="relative max-w-6xl mx-auto px-6">
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
         {/* row 1: the tiny form */}
         <div className="max-w-4xl">
           <span className="inline-flex items-center rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.22em] font-medium ring-1 bg-[#f2ead8]/10 text-[#f2ead8]/70 ring-[#f2ead8]/15">
@@ -70,7 +71,7 @@ export function MarkFooter() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.3, ease: EASE }}
                   onSubmit={handleSubmit}
-                  className="text-3xl sm:text-5xl leading-[1.2] tracking-tight"
+                  className="text-3xl leading-[1.2] tracking-tight sm:text-5xl"
                   style={{ fontFamily: SERIF, fontWeight: 500 }}
                 >
                   <span>I&apos;d love a form for </span>
@@ -98,11 +99,11 @@ export function MarkFooter() {
                     <button
                       type="submit"
                       disabled={!topic.trim() || !feel.trim()}
-                      className="group inline-flex items-center gap-3 rounded-full pl-5 pr-2 py-2 text-sm font-medium bg-[#f2ead8] text-[#0e0e0e] hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98]"
+                      className="group inline-flex min-h-12 items-center gap-3 rounded-full bg-[#f2ead8] py-2 pl-5 pr-2 text-sm font-medium text-[#0e0e0e] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5DBA85] focus-visible:ring-offset-4 focus-visible:ring-offset-[#0e0e0e] disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
                     >
                       <span>send this thought</span>
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#0e0e0e]/10 text-[#0e0e0e] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5 group-hover:-translate-y-[1px]">
-                        <ArrowIcon className="h-3 w-3" />
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0e0e0e]/10 text-[#0e0e0e] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5 group-hover:-translate-y-[1px]">
+                        <ArrowRight className="h-4 w-4" aria-hidden />
                       </span>
                     </button>
                   </div>
@@ -113,7 +114,8 @@ export function MarkFooter() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: EASE }}
-                  className="text-3xl sm:text-5xl leading-[1.2] tracking-tight"
+                  role="status"
+                  className="text-3xl leading-[1.2] tracking-tight sm:text-5xl"
                   style={{ fontFamily: SERIF, fontWeight: 500 }}
                 >
                   <p>
@@ -135,15 +137,15 @@ export function MarkFooter() {
         </div>
 
         {/* divider */}
-        <hr className="my-16 border-[#f2ead8]/10" />
+        <hr className="my-14 border-[#f2ead8]/10 sm:my-16" />
 
         {/* row 2: brand + link columns */}
-        <div className="grid grid-cols-2 sm:grid-cols-12 gap-10 sm:gap-8">
+        <div className="grid grid-cols-2 gap-10 sm:grid-cols-12 sm:gap-8">
           {/* brand block */}
           <div className="col-span-2 sm:col-span-5 space-y-5">
             <Link
               href="/"
-              className="group inline-flex items-baseline gap-2 text-4xl tracking-tight"
+              className="group inline-flex min-h-11 items-baseline gap-2 rounded-sm text-4xl tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5DBA85] focus-visible:ring-offset-4 focus-visible:ring-offset-[#0e0e0e]"
               style={{ fontFamily: SERIF, fontWeight: 500 }}
             >
               <span>sensus</span>
@@ -193,14 +195,20 @@ export function MarkFooter() {
         </div>
 
         {/* base line */}
-        <div className="mt-16 flex flex-wrap items-center justify-between gap-6 text-[10px] tracking-[0.22em] uppercase text-[#f2ead8]/35">
+        <div className="mt-16 flex flex-wrap items-center justify-between gap-6 text-[10px] uppercase tracking-[0.22em] text-[#f2ead8]/35">
           <span>made for the people who answer, not just the people who ask</span>
-          <span className="inline-flex items-center gap-4">
+          <span className="inline-flex flex-wrap items-center gap-4">
             <span>© sensus, {new Date().getFullYear()}</span>
-            <Link href="/" className="hover:text-[#f2ead8]/70 transition-colors">
+            <Link
+              href="/"
+              className="min-h-11 rounded-sm py-3 transition-colors hover:text-[#f2ead8]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5DBA85] focus-visible:ring-offset-4 focus-visible:ring-offset-[#0e0e0e]"
+            >
               terms
             </Link>
-            <Link href="/" className="hover:text-[#f2ead8]/70 transition-colors">
+            <Link
+              href="/"
+              className="min-h-11 rounded-sm py-3 transition-colors hover:text-[#f2ead8]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5DBA85] focus-visible:ring-offset-4 focus-visible:ring-offset-[#0e0e0e]"
+            >
               privacy
             </Link>
           </span>
@@ -227,7 +235,7 @@ function FooterCol({
           <li key={l.href + l.label}>
             <Link
               href={l.href}
-              className="group inline-flex items-baseline gap-2 text-[15px] text-[#f2ead8]/85 hover:text-[#f2ead8] transition-colors"
+              className="group inline-flex min-h-11 items-center gap-2 rounded-sm text-[15px] text-[#f2ead8]/85 transition-colors hover:text-[#f2ead8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5DBA85] focus-visible:ring-offset-4 focus-visible:ring-offset-[#0e0e0e]"
               style={{ fontFamily: SERIF }}
             >
               <span>{l.label}</span>
@@ -240,19 +248,5 @@ function FooterCol({
         ))}
       </ul>
     </div>
-  );
-}
-
-function ArrowIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
-      <path
-        d="M3 8h10M9 4l4 4-4 4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

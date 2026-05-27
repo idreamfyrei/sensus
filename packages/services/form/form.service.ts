@@ -11,9 +11,11 @@ import {
   responsesTable,
   responseAnswersTable,
   themesTable,
+  user,
   notDeleted,
   type Database,
 } from "@repo/database";
+import { EmailService } from "@repo/email";
 import { logger } from "@repo/logger";
 import { FIELD_TYPES_CATALOG, getFieldTypeDef } from "@repo/schemas";
 import { evaluateConditions } from "../condition/evaluator";
@@ -118,7 +120,19 @@ export class ThemeNotFoundForFormError extends Error {
 }
 
 export class FormService {
-  constructor(private readonly db: Database) {}
+  private readonly db: Database;
+  private readonly emailService: EmailService;
+
+  constructor(db: Database, emailService?: EmailService) {
+    this.db = db;
+    this.emailService =
+      emailService ??
+      new EmailService({
+        apiKey: process.env.RESEND_API_KEY,
+        from: process.env.RESEND_FROM,
+        logger,
+      });
+  }
 
   async create(args: { userId: string; input: CreateFormServiceInput }): Promise<Form> {
     const slug = generateSlug(args.input.title);
@@ -614,6 +628,7 @@ export class FormService {
       valueText: string | null;
       valueJson: unknown | null;
     }> = [];
+    const parsedAnswerByFieldId = new Map<string, unknown>();
 
     for (const [fieldId, { field, sectionId }] of fieldsById) {
       if (evaluation.hiddenFieldIds.has(fieldId)) continue;
@@ -638,6 +653,8 @@ export class FormService {
         continue;
       }
 
+      parsedAnswerByFieldId.set(fieldId, parsed.data);
+
       rowsToInsert.push({
         formFieldId: fieldId,
         valueText: def.answerKind === "text" ? String(parsed.data) : null,
@@ -645,7 +662,7 @@ export class FormService {
       });
     }
 
-    return this.db.transaction(async (tx) => {
+    const submission = await this.db.transaction(async (tx) => {
       const [response] = await tx.insert(responsesTable).values({ formId: form.id }).returning();
       if (!response) throw new Error("FormService.submit: response insert returned nothing");
 
@@ -665,8 +682,61 @@ export class FormService {
         formId: form.id,
         answerCount: rowsToInsert.length,
       });
-      return { responseId: response.id };
+      return {
+        responseId: response.id,
+        submittedAt: response.submittedAt,
+      };
     });
+
+    const [creator] = await this.db
+      .select({ email: user.email })
+      .from(user)
+      .where(and(eq(user.id, form.userId), notDeleted(user.deletedAt)))
+      .limit(1);
+
+    let respondentEmail: string | null = null;
+    for (const [fieldId, parsedValue] of parsedAnswerByFieldId) {
+      const meta = fieldsById.get(fieldId);
+      if (!meta || meta.type !== "email") continue;
+      if (typeof parsedValue === "string" && parsedValue.trim()) {
+        respondentEmail = parsedValue.trim().toLowerCase();
+        break;
+      }
+    }
+
+    const emailTasks: Promise<void>[] = [];
+    if (creator?.email) {
+      emailTasks.push(
+        this.emailService.sendNewResponse({
+          to: creator.email,
+          formTitle: form.title,
+          formSlug: form.slug,
+          responseId: submission.responseId,
+          submittedAt: submission.submittedAt,
+          answerCount: rowsToInsert.length,
+        }),
+      );
+    }
+    if (respondentEmail) {
+      emailTasks.push(
+        this.emailService.sendRespondentThankYou({
+          to: respondentEmail,
+          formTitle: form.title,
+          formSlug: form.slug,
+        }),
+      );
+    }
+    if (emailTasks.length > 0) {
+      void Promise.all(emailTasks).catch((error) => {
+        logger.error("email dispatch failed after response submission", {
+          responseId: submission.responseId,
+          formId: form.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+    }
+
+    return { responseId: submission.responseId };
   }
 
   /** Load sections + fields + options for a form and stitch into a tree. */

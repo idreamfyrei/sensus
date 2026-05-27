@@ -18,6 +18,7 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json turbo.json ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/auth/package.json ./packages/auth/
 COPY packages/database/package.json ./packages/database/
+COPY packages/email/package.json ./packages/email/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY packages/logger/package.json ./packages/logger/
 COPY packages/schemas/package.json ./packages/schemas/
@@ -37,8 +38,9 @@ COPY packages ./packages
 RUN pnpm --filter @repo/api... build
 
 # Re-run pnpm install with --prod to drop devDependencies from the
-# graph that will be copied into the final image.
-RUN pnpm install --prod --frozen-lockfile --prefer-offline
+# graph that will be copied into the final image. Ignore scripts so
+# root prepare hooks (husky) don't run in this production image build.
+RUN pnpm install --prod --frozen-lockfile --prefer-offline --force --ignore-scripts
 
 # ---------- 4. runtime -------------------------------------------------
 FROM node:22-alpine AS runner

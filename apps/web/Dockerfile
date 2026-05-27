@@ -14,6 +14,7 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json turbo.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/auth/package.json ./packages/auth/
 COPY packages/database/package.json ./packages/database/
+COPY packages/email/package.json ./packages/email/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY packages/logger/package.json ./packages/logger/
 COPY packages/schemas/package.json ./packages/schemas/
@@ -26,11 +27,15 @@ RUN pnpm install --frozen-lockfile --prefer-offline
 FROM base AS build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV WORKSPACE_ROOT=/app
+# Required while compiling /api/auth route during next build.
+ENV DATABASE_URL=postgresql://postgres:postgres@localhost:5432/sensus
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/packages ./packages
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json turbo.json ./
 COPY apps/web ./apps/web
 COPY packages ./packages
+RUN touch apps/web/.env
 
 # Build args become NEXT_PUBLIC_* baked into the static output.
 ARG NEXT_PUBLIC_API_URL

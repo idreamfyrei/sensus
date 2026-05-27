@@ -173,6 +173,7 @@ sensus/
 ├── packages/
 │   ├── auth/            Better Auth config (server + client)
 │   ├── database/        Drizzle schema, db client, helpers, dev/demo seeds
+│   ├── email/           React Email templates + Resend transport
 │   ├── eslint-config/   Shared flat config
 │   ├── logger/          Winston
 │   ├── schemas/         drizzle-zod wire shapes + field-type catalog
