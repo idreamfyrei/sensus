@@ -8,7 +8,8 @@
     "build": "tsup",
     "lint": "eslint src/*",
     "test": "vitest run --passWithNoTests",
-    "db:seed-dev": "dotenv -- tsx ./src/seed-dev.ts"
+    "db:seed-dev": "dotenv -- tsx ./src/seed-dev.ts",
+    "db:seed-demo": "dotenv -- tsx ./src/seed-demo.ts"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

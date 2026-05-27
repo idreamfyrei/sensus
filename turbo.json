@@ -39,6 +39,9 @@
     "db:seed-dev": {
       "cache": false
     },
+    "db:seed-demo": {
+      "cache": false
+    },
     "test": {
       "dependsOn": ["^test"]
     }
