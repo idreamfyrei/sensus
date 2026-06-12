@@ -4,13 +4,13 @@ import { GripVertical, MoveRight } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FIELD_TYPES_CATALOG } from "@repo/schemas/fields";
-import type { RouterOutputs } from "@repo/trpc/client";
 import { FieldCard } from "./field-card";
 import { ConditionsEditor } from "./conditions-editor";
 import { trpc } from "~/trpc/client";
+import type { FormSchema } from "~/lib/api-types";
 
 type FieldRow = Parameters<typeof FieldCard>[0]["field"];
-type FormShape = RouterOutputs["forms"]["get"];
+type FormShape = FormSchema;
 
 type SortableFieldCardProps = {
   field: FieldRow;

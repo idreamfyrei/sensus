@@ -10,16 +10,16 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
-import type { RouterOutputs } from "@repo/trpc/client";
 import { Button } from "~/components/ui/button";
 import { trpc } from "~/trpc/client";
 import { SectionCard } from "./section-card";
+import type { FormSchema } from "~/lib/api-types";
 
-type FormShape = RouterOutputs["forms"]["get"];
+type FormShape = FormSchema;
 
 export function SectionsList({ form, disabled }: { form: FormShape; disabled: boolean }) {
   const utils = trpc.useUtils();
-  const sectionIds = form.sections.map((s) => s.id);
+  const sectionIds: string[] = form.sections.map((s) => s.id);
 
   const reorderSections = trpc.sections.reorder.useMutation({
     onSuccess: () => utils.forms.get.invalidate({ id: form.id }),
@@ -38,7 +38,7 @@ export function SectionsList({ form, disabled }: { form: FormShape; disabled: bo
     const newIndex = sectionIds.indexOf(String(over.id));
     if (oldIndex < 0 || newIndex < 0) return;
 
-    const newOrder = arrayMove(sectionIds, oldIndex, newIndex);
+    const newOrder = arrayMove<string>(sectionIds, oldIndex, newIndex);
     reorderSections.mutate({ formId: form.id, orderedIds: newOrder });
   };
 

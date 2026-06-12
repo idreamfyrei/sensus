@@ -3,9 +3,11 @@
 import { trpc } from "~/trpc/client";
 import { PublicNav } from "~/components/marketing/public-nav";
 import { FormCard } from "~/components/marketing/form-card";
+import type { PublicFormSummary } from "~/lib/api-types";
 
 export default function ExplorePage() {
   const forms = trpc.forms.listPublic.useQuery();
+  const publicForms = forms.data as PublicFormSummary[] | undefined;
 
   return (
     <>
@@ -28,7 +30,7 @@ export default function ExplorePage() {
             </div>
           )}
 
-          {forms.data && forms.data.length === 0 && (
+          {publicForms && publicForms.length === 0 && (
             <div className="text-center py-16 border-2 border-dashed border-neutral-200 rounded-lg">
               <p className="text-neutral-500">
                 No public forms yet. Once creators publish forms with public visibility,
@@ -37,9 +39,9 @@ export default function ExplorePage() {
             </div>
           )}
 
-          {forms.data && forms.data.length > 0 && (
+          {publicForms && publicForms.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {forms.data.map((f) => (
+              {publicForms.map((f) => (
                 <FormCard key={f.id} form={f} href={`/f/${f.slug}`} cta="Open form" />
               ))}
             </div>

@@ -8,12 +8,12 @@ import { z } from "zod";
 import { getFieldTypeDef, type FieldType } from "@repo/schemas/fields";
 import { evaluateConditions, type ConditionEvaluation } from "@repo/services/condition/evaluator";
 import { trpc } from "~/trpc/client";
-import type { RouterOutputs } from "@repo/trpc/client";
+import type { FormField, FormSchema, FormSection } from "~/lib/api-types";
 import { FieldRenderer } from "./field-renderer";
 
-type FormShape = RouterOutputs["publicForm"]["getBySlug"] | RouterOutputs["forms"]["get"];
-type Section = RouterOutputs["publicForm"]["getBySlug"]["sections"][number];
-type Field = Section["fields"][number];
+type FormShape = FormSchema;
+type Section = FormSection;
+type Field = FormField;
 
 type Screen =
   | { kind: "page"; id: string; pageIndex: number; sections: Section[]; fieldIds: string[] }

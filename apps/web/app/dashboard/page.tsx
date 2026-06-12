@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@repo/auth/client";
 import { trpc } from "~/trpc/client";
+import type { FormSummary } from "~/lib/api-types";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function DashboardPage() {
   const { data: session } = authClient.useSession();
 
   const formsList = trpc.forms.list.useQuery();
+  const forms = formsList.data as FormSummary[] | undefined;
 
   const createForm = trpc.forms.create.useMutation({
     onSuccess: (form) => {
@@ -87,7 +89,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {formsList.data && formsList.data.length === 0 && (
+        {forms && forms.length === 0 && (
           <div className="text-center py-16 border-2 border-dashed border-neutral-200 rounded-lg">
             <p className="text-neutral-500 mb-3">No forms yet.</p>
             <p className="text-sm text-neutral-400">
@@ -96,9 +98,9 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {formsList.data && formsList.data.length > 0 && (
+        {forms && forms.length > 0 && (
           <ul className="space-y-2">
-            {formsList.data.map((form) => (
+            {forms.map((form) => (
               <li
                 key={form.id}
                 className="border border-neutral-200 bg-white rounded-lg p-4 flex items-center justify-between hover:border-neutral-400 transition"

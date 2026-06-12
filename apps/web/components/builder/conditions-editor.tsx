@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import type { RouterOutputs } from "@repo/trpc/client";
 import { trpc } from "~/trpc/client";
 import { Button } from "~/components/ui/button";
+import type { FormCondition, FormField, FormSchema, FormSection } from "~/lib/api-types";
 
-type FormShape = RouterOutputs["forms"]["get"];
-type Condition = FormShape["conditions"][number];
-type Section = FormShape["sections"][number];
-type Field = Section["fields"][number];
+type FormShape = FormSchema;
+type Condition = FormCondition;
+type Section = FormSection;
+type Field = FormField;
 
 type Operator = Condition["operator"];
 type Action = Condition["action"];

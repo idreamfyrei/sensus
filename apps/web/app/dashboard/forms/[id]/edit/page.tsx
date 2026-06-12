@@ -10,6 +10,7 @@ import { ThemePicker } from "~/components/builder/theme-picker";
 import { VisibilityPicker } from "~/components/builder/visibility-picker";
 import { DangerZone } from "~/components/builder/danger-zone";
 import { TemplateToggle } from "~/components/builder/template-toggle";
+import type { ThemePreset } from "~/lib/api-types";
 
 export default function EditFormPage() {
   const params = useParams<{ id: string }>();
@@ -59,7 +60,8 @@ export default function EditFormPage() {
   const publicUrl =
     typeof window !== "undefined" ? `${window.location.origin}/f/${formData.slug}` : "";
 
-  const currentTheme = themes.data?.find((t) => t.id === formData.themeId);
+  const themeList = themes.data as ThemePreset[] | undefined;
+  const currentTheme = themeList?.find((t) => t.id === formData.themeId);
   const currentThemeLabel = currentTheme?.name ?? "Default";
 
   const handleCopy = async () => {

@@ -6,12 +6,14 @@ import { trpc } from "~/trpc/client";
 import { PublicNav } from "~/components/marketing/public-nav";
 import { FormCard } from "~/components/marketing/form-card";
 import { Button } from "~/components/ui/button";
+import type { PublicFormSummary } from "~/lib/api-types";
 
 export default function TemplatesPage() {
   const router = useRouter();
   const utils = trpc.useUtils();
   const { data: session } = authClient.useSession();
   const templates = trpc.forms.listTemplates.useQuery();
+  const templateForms = templates.data as PublicFormSummary[] | undefined;
   const clone = trpc.forms.cloneTemplate.useMutation({
     onSuccess: (newForm) => {
       utils.forms.list.invalidate();
@@ -40,7 +42,7 @@ export default function TemplatesPage() {
             </div>
           )}
 
-          {templates.data && templates.data.length === 0 && (
+          {templateForms && templateForms.length === 0 && (
             <div className="text-center py-16 border-2 border-dashed border-neutral-200 rounded-lg">
               <p className="text-neutral-500">
                 No templates yet. Templates show up here once a creator flags a published, public
@@ -55,9 +57,9 @@ export default function TemplatesPage() {
             </div>
           )}
 
-          {templates.data && templates.data.length > 0 && (
+          {templateForms && templateForms.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {templates.data.map((f) => (
+              {templateForms.map((f) => (
                 <FormCard
                   key={f.id}
                   form={f}

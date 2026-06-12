@@ -2,6 +2,7 @@
 
 import { Check, Loader2, X } from "lucide-react";
 import { trpc } from "~/trpc/client";
+import type { ThemePreset } from "~/lib/api-types";
 
 type ThemePickerProps = {
   formId: string;
@@ -20,6 +21,7 @@ export function ThemePicker({
 }: ThemePickerProps) {
   const utils = trpc.useUtils();
   const themes = trpc.themes.list.useQuery();
+  const themeList = themes.data as ThemePreset[] | undefined;
 
   const setTheme = trpc.forms.setTheme.useMutation({
     onSuccess: () => {
@@ -39,7 +41,7 @@ export function ThemePicker({
     );
   }
 
-  if (themes.error || !themes.data) {
+  if (themes.error || !themeList) {
     return (
       <div className="rounded-[28px] border border-red-200 bg-red-50 p-6">
         <p className="text-sm text-red-700">
@@ -81,7 +83,7 @@ export function ThemePicker({
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {themes.data.map((theme) => {
+        {themeList.map((theme) => {
           const isCurrent = theme.id === currentThemeId;
           const isPending = setTheme.isPending && setTheme.variables?.themeId === theme.id;
 

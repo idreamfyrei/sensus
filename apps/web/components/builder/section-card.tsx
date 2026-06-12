@@ -17,19 +17,19 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { RouterOutputs } from "@repo/trpc/client";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { trpc } from "~/trpc/client";
 import { AddFieldSection } from "./add-field-section";
 import { SortableFieldCard } from "./sortable-field-card";
+import type { FormField, FormSchema, FormSection } from "~/lib/api-types";
 
-type SectionRow = RouterOutputs["forms"]["get"]["sections"][number];
-type FieldRow = SectionRow["fields"][number];
+type SectionRow = FormSection;
+type FieldRow = FormField;
 
 type SectionCardProps = {
   section: SectionRow;
-  form: RouterOutputs["forms"]["get"];
+  form: FormSchema;
   otherSections: Array<{ id: string; title: string | null }>;
   fullLayout: Array<{ sectionId: string; fieldIds: string[] }>;
   canDelete: boolean;
@@ -68,7 +68,7 @@ export function SectionCard({
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const fieldIds = section.fields.map((f) => f.id);
+  const fieldIds: string[] = section.fields.map((f) => f.id);
 
   const onFieldDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -78,7 +78,7 @@ export function SectionCard({
     const newIndex = fieldIds.indexOf(String(over.id));
     if (oldIndex < 0 || newIndex < 0) return;
 
-    const newOrder = arrayMove(fieldIds, oldIndex, newIndex);
+    const newOrder = arrayMove<string>(fieldIds, oldIndex, newIndex);
     const next = fullLayout.map((s) =>
       s.sectionId === section.id ? { sectionId: s.sectionId, fieldIds: newOrder } : s,
     );

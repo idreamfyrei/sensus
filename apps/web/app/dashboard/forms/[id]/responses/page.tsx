@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
 import { trpc } from "~/trpc/client";
+import type { FormResponseList, FormResponseRow, FormSchema } from "~/lib/api-types";
 
 export default function FormResponsesPage() {
   const params = useParams<{ id: string }>();
@@ -53,10 +54,11 @@ export default function FormResponsesPage() {
     );
   }
 
-  const formData = form.data;
+  const formData = form.data as FormSchema;
   const allFields = formData.sections.flatMap((s) => s.fields);
-  const rows = responses.data?.responses ?? [];
-  const total = responses.data?.total ?? 0;
+  const responseData = responses.data as FormResponseList | undefined;
+  const rows = responseData?.responses ?? [];
+  const total = responseData?.total ?? 0;
 
   return (
     <main className="min-h-screen bg-neutral-50 p-8">
@@ -119,7 +121,7 @@ export default function FormResponsesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {rows.map((r) => {
+                {rows.map((r: FormResponseRow) => {
                   const byField = new Map(r.answers.map((a) => [a.formFieldId, a]));
                   return (
                     <tr key={r.id} className="hover:bg-neutral-50">
