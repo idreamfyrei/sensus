@@ -8,6 +8,37 @@ import { trpc } from "~/trpc/client";
 
 type Draft = { label: string; value: string };
 
+function valueFromLabel(label: string, fallback: string): string {
+  const value = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return value || fallback;
+}
+
+function normalizeOptions(options: Draft[]): Draft[] {
+  const seen = new Map<string, number>();
+
+  return options.flatMap((option, index) => {
+    const label = option.label.trim();
+    const value = option.value.trim();
+    if (!label && !value) return [];
+
+    const nextLabel = label || value;
+    const baseValue = value || valueFromLabel(nextLabel, `option-${index + 1}`);
+    const count = seen.get(baseValue) ?? 0;
+    seen.set(baseValue, count + 1);
+
+    return [
+      {
+        label: nextLabel,
+        value: count === 0 ? baseValue : `${baseValue}-${count + 1}`,
+      },
+    ];
+  });
+}
+
 export function OptionsEditor({
   fieldId,
   initialOptions,
@@ -25,15 +56,26 @@ export function OptionsEditor({
   });
 
   const save = (next: Draft[] = draft) => {
-    const nonEmpty = next.filter((o) => o.label.length > 0 && o.value.length > 0);
-    setOptions.mutate({ fieldId, options: nonEmpty });
+    const normalized = normalizeOptions(next);
+    setDraft(normalized);
+    setOptions.mutate({ fieldId, options: normalized });
   };
 
   const updateOption = (i: number, k: "label" | "value", v: string) => {
     setDraft((d) => d.map((o, idx) => (idx === i ? { ...o, [k]: v } : o)));
   };
 
-  const addOption = () => setDraft((d) => [...d, { label: "", value: "" }]);
+  const addOption = () => {
+    const next = [
+      ...draft,
+      {
+        label: `Option ${draft.length + 1}`,
+        value: `option-${draft.length + 1}`,
+      },
+    ];
+    setDraft(next);
+    save(next);
+  };
 
   const removeOption = (i: number) => {
     const next = draft.filter((_, idx) => idx !== i);

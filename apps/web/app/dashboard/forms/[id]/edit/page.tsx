@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { FIELD_TYPES_CATALOG } from "@repo/schemas/fields";
 import { trpc } from "~/trpc/client";
 import { LayoutToggle } from "~/components/builder/layout-toggle";
 import { SectionsList } from "~/components/builder/sections-list";
@@ -10,7 +11,7 @@ import { ThemePicker } from "~/components/builder/theme-picker";
 import { VisibilityPicker } from "~/components/builder/visibility-picker";
 import { DangerZone } from "~/components/builder/danger-zone";
 import { TemplateToggle } from "~/components/builder/template-toggle";
-import type { ThemePreset } from "~/lib/api-types";
+import type { FormSchema, ThemePreset } from "~/lib/api-types";
 
 export default function EditFormPage() {
   const params = useParams<{ id: string }>();
@@ -21,12 +22,14 @@ export default function EditFormPage() {
 
   const publish = trpc.forms.publish.useMutation({
     onSuccess: () => {
+      setPublishWarning(null);
       utils.forms.get.invalidate({ id: formId });
       utils.forms.list.invalidate();
     },
   });
 
   const [copied, setCopied] = useState(false);
+  const [publishWarning, setPublishWarning] = useState<string | null>(null);
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const themes = trpc.themes.list.useQuery();
 
@@ -55,7 +58,7 @@ export default function EditFormPage() {
 
   if (!form.data) return null;
 
-  const formData = form.data;
+  const formData = form.data as FormSchema;
   const isPublished = formData.status === "published";
   const publicUrl =
     typeof window !== "undefined" ? `${window.location.origin}/f/${formData.slug}` : "";
@@ -63,12 +66,30 @@ export default function EditFormPage() {
   const themeList = themes.data as ThemePreset[] | undefined;
   const currentTheme = themeList?.find((t) => t.id === formData.themeId);
   const currentThemeLabel = currentTheme?.name ?? "Default";
+  const missingOptionFields = formData.sections.flatMap((section) =>
+    section.fields.filter(
+      (field) => FIELD_TYPES_CATALOG[field.type].hasOptions && field.options.length === 0,
+    ),
+  );
 
   const handleCopy = async () => {
     if (!publicUrl) return;
     await navigator.clipboard.writeText(publicUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const handlePublish = () => {
+    if (missingOptionFields.length > 0) {
+      const names = missingOptionFields.map((field) => `"${field.label}"`).join(", ");
+      setPublishWarning(
+        `Add at least one option to ${names} before publishing. Radio, multi-select, and dropdown questions need saved options.`,
+      );
+      return;
+    }
+
+    setPublishWarning(null);
+    publish.mutate({ id: formData.id, version: formData.version });
   };
 
   return (
@@ -99,7 +120,7 @@ export default function EditFormPage() {
             {!isPublished ? (
               <button
                 type="button"
-                onClick={() => publish.mutate({ id: formData.id, version: formData.version })}
+                onClick={handlePublish}
                 disabled={publish.isPending}
                 className="px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
@@ -116,6 +137,12 @@ export default function EditFormPage() {
         {publish.error && (
           <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
             {publish.error.message}
+          </div>
+        )}
+
+        {publishWarning && (
+          <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded text-sm">
+            {publishWarning}
           </div>
         )}
 
