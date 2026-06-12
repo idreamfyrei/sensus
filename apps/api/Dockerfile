@@ -40,6 +40,7 @@ RUN addgroup --system --gid 1001 sensus \
 RUN apk add --no-cache tini
 
 COPY --from=build --chown=sensus:sensus /app/node_modules ./node_modules
+COPY --from=build --chown=sensus:sensus /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build --chown=sensus:sensus /app/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=sensus:sensus /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build --chown=sensus:sensus /app/packages ./packages
