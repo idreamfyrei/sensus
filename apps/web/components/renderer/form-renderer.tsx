@@ -106,6 +106,28 @@ function buildScreens(form: FormShape): Screen[] {
   return screens;
 }
 
+function friendlySubmitError(message: string | undefined): string {
+  const raw = message ?? "";
+  const lower = raw.toLowerCase();
+
+  if (
+    lower.includes("invalid input") ||
+    lower.includes("invalid value") ||
+    lower.includes("expected") ||
+    lower.includes("required")
+  ) {
+    return "Some answers need attention. Please review the highlighted question and try again.";
+  }
+  if (lower.includes("not accepting") || lower.includes("not published")) {
+    return "This form is not accepting responses right now.";
+  }
+  if (lower.includes("too many")) {
+    return "Too many attempts. Please wait a moment and try again.";
+  }
+
+  return "Something went wrong. Please try again.";
+}
+
 export function FormRenderer({
   form,
   previewMode = false,
@@ -346,7 +368,7 @@ export function FormRenderer({
 
       {submit.error && (
         <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
-          {submit.error.message}
+          {friendlySubmitError(submit.error.message)}
         </div>
       )}
 

@@ -19,6 +19,58 @@ import {
 
 type FieldRow = RouterOutputs["publicForm"]["getBySlug"]["sections"][number]["fields"][number];
 
+function friendlyFieldError(field: FieldRow, message: string | undefined): string {
+  const raw = message ?? "";
+  const lower = raw.toLowerCase();
+  const isRequired =
+    lower.includes("required") ||
+    lower.includes("received undefined") ||
+    lower.includes("received null");
+
+  if (raw === "Must be checked") return "Check this box to continue.";
+
+  switch (field.type) {
+    case "single_select":
+    case "dropdown":
+      return "Choose one option to continue.";
+    case "multi_select": {
+      const minimum = Math.max(1, field.minSelected ?? (field.required ? 1 : 0));
+      if (lower.includes("too small") || isRequired) {
+        return minimum > 1
+          ? `Choose at least ${minimum} options to continue.`
+          : "Choose at least one option to continue.";
+      }
+      if (lower.includes("too big") && field.maxSelected != null) {
+        return `Choose no more than ${field.maxSelected} options.`;
+      }
+      return "Choose from the available options.";
+    }
+    case "checkbox":
+      return "Check this box to continue.";
+    case "email":
+      return isRequired ? "Enter an email address." : "Enter a valid email address.";
+    case "number":
+      if (lower.includes("too small") && field.min != null) return `Enter ${field.min} or more.`;
+      if (lower.includes("too big") && field.max != null) return `Enter ${field.max} or less.`;
+      return isRequired ? "Enter a number." : "Enter a valid number.";
+    case "rating":
+      return "Choose a rating to continue.";
+    case "date":
+      return field.includeTime ? "Enter a valid date and time." : "Enter a valid date.";
+    case "short_text":
+    case "long_text":
+      if (lower.includes("too small") && field.minLength != null) {
+        return `Enter at least ${field.minLength} characters.`;
+      }
+      if (lower.includes("too big") && field.maxLength != null) {
+        return `Keep this under ${field.maxLength} characters.`;
+      }
+      return "Answer this question to continue.";
+  }
+
+  return "Please check this answer and try again.";
+}
+
 export function FieldRenderer({
   field,
   control,
@@ -54,7 +106,9 @@ export function FieldRenderer({
               }}
             />
             {fieldState.error && (
-              <p className="text-xs text-red-600 mt-1">{fieldState.error.message}</p>
+              <p className="text-xs text-red-600 mt-1">
+                {friendlyFieldError(field, fieldState.error.message)}
+              </p>
             )}
           </>
         )}
