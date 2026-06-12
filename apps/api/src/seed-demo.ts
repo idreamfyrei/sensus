@@ -860,6 +860,7 @@ async function seedOneForm(args: {
     form.sections && form.sections.length > 0
       ? form.sections
       : [{ fields: form.fields } satisfies DemoSection];
+  const fieldsForResponses = sections.flatMap((section) => section.fields);
 
   const insertedFieldIds: string[] = [];
   const fieldIdByLabel = new Map<string, string>();
@@ -971,7 +972,7 @@ async function seedOneForm(args: {
       const value = responseRow[i];
       if (!fieldId || value === null || value === undefined) continue;
 
-      const fieldDef = form.fields[i]!;
+      const fieldDef = fieldsForResponses[i]!;
       const isJson = fieldDef.type === "multi_select" || Array.isArray(value);
       await db.insert(responseAnswersTable).values({
         responseId: resp.id,
