@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,6 +40,8 @@ function defaultValueFor(type: FieldType): unknown {
       return false;
     case "multi_select":
       return [];
+    case "single_select":
+    case "dropdown":
     case "number":
     case "rating":
       return undefined;
@@ -138,16 +140,27 @@ export function FormRenderer({
     resolver: zodResolver(schema),
     defaultValues,
     mode: "onSubmit",
+    shouldUnregister: false,
   });
+  const [answerValues, setAnswerValues] = useState<Record<string, unknown>>(() => defaultValues);
+
+  useEffect(() => {
+    methods.reset(defaultValues);
+    setAnswerValues(defaultValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.id]);
+
+  const rememberValue = (fieldId: string, value: unknown) => {
+    setAnswerValues((current) => ({ ...current, [fieldId]: value }));
+  };
 
   const submit = trpc.publicForm.submit.useMutation({
     onSuccess: () => router.push(`/f/${form.slug}/thanks`),
   });
 
-  const liveValues = methods.watch();
   const evaluation = useMemo(
-    () => evaluateConditions({ conditions: form.conditions, answers: liveValues }),
-    [form.conditions, liveValues],
+    () => evaluateConditions({ conditions: form.conditions, answers: answerValues }),
+    [answerValues, form.conditions],
   );
 
   const visibleForm = useMemo(() => filterVisible(form, evaluation), [form, evaluation]);
@@ -165,7 +178,7 @@ export function FormRenderer({
 
   const visibleFieldIds = new Set(visibleForm.sections.flatMap((s) => s.fields.map((f) => f.id)));
 
-  const onSubmit = (values: Record<string, unknown>) => {
+  const submitValues = (values: Record<string, unknown>) => {
     if (previewMode) {
       setPreviewSubmitted(true);
       return;
@@ -287,21 +300,47 @@ export function FormRenderer({
   const showBack = history.length > 0;
   const showSubmit = isLast || (form.layout === "one_per_screen" && findNextStepId() === null);
 
+  const handleSubmit = async () => {
+    const valid = await validateVisible();
+    if (!valid) return;
+
+    const values = { ...methods.getValues(), ...answerValues };
+    for (const fieldId of current.fieldIds) {
+      values[fieldId] = methods.getValues(fieldId);
+    }
+    submitValues(values);
+  };
+
   return (
-    <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        void handleSubmit();
+      }}
+      className="space-y-6"
+    >
       {honeypotField}
       <ProgressIndicator layout={form.layout} screens={screens} currentIndex={currentIndex} />
 
       <div className="space-y-6">
         {current.kind === "page" &&
           current.sections.map((s) => (
-            <SectionBlock key={s.id} section={s} control={methods.control} />
+            <SectionBlock
+              key={s.id}
+              section={s}
+              control={methods.control}
+              onValueChange={rememberValue}
+            />
           ))}
 
         {current.kind === "intro" && <SectionIntro section={current.section} />}
 
         {current.kind === "field" && (
-          <FieldRenderer field={current.field} control={methods.control} />
+          <FieldRenderer
+            field={current.field}
+            control={methods.control}
+            onValueChange={rememberValue}
+          />
         )}
       </div>
 
@@ -365,9 +404,11 @@ function PreviewSubmittedBanner() {
 function SectionBlock({
   section,
   control,
+  onValueChange,
 }: {
   section: Section;
   control: Parameters<typeof FieldRenderer>[0]["control"];
+  onValueChange: NonNullable<Parameters<typeof FieldRenderer>[0]["onValueChange"]>;
 }) {
   return (
     <section className="space-y-4">
@@ -378,7 +419,12 @@ function SectionBlock({
         </header>
       )}
       {section.fields.map((field) => (
-        <FieldRenderer key={field.id} field={field} control={control} />
+        <FieldRenderer
+          key={field.id}
+          field={field}
+          control={control}
+          onValueChange={onValueChange}
+        />
       ))}
     </section>
   );

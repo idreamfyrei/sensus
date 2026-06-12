@@ -22,9 +22,11 @@ type FieldRow = RouterOutputs["publicForm"]["getBySlug"]["sections"][number]["fi
 export function FieldRenderer({
   field,
   control,
+  onValueChange,
 }: {
   field: FieldRow;
   control: Control<FieldValues>;
+  onValueChange?: (fieldId: string, value: unknown) => void;
 }) {
   return (
     <div className="space-y-2">
@@ -39,9 +41,18 @@ export function FieldRenderer({
       <Controller
         control={control}
         name={field.id}
+        shouldUnregister={false}
         render={({ field: rhf, fieldState }) => (
           <>
-            <FieldInput type={field.type} field={field} value={rhf.value} onChange={rhf.onChange} />
+            <FieldInput
+              type={field.type}
+              field={field}
+              value={rhf.value}
+              onChange={(value) => {
+                rhf.onChange(value);
+                onValueChange?.(field.id, value);
+              }}
+            />
             {fieldState.error && (
               <p className="text-xs text-red-600 mt-1">{fieldState.error.message}</p>
             )}
