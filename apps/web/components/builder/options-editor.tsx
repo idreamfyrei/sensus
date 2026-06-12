@@ -42,9 +42,11 @@ function normalizeOptions(options: Draft[]): Draft[] {
 export function OptionsEditor({
   fieldId,
   initialOptions,
+  disabled,
 }: {
   fieldId: string;
   initialOptions: Array<{ label: string; value: string }>;
+  disabled: boolean;
 }) {
   const utils = trpc.useUtils();
   const [draft, setDraft] = useState<Draft[]>(
@@ -56,6 +58,7 @@ export function OptionsEditor({
   });
 
   const save = (next: Draft[] = draft) => {
+    if (disabled) return;
     const normalized = normalizeOptions(next);
     setDraft(normalized);
     setOptions.mutate({ fieldId, options: normalized });
@@ -66,6 +69,7 @@ export function OptionsEditor({
   };
 
   const addOption = () => {
+    if (disabled) return;
     const next = [
       ...draft,
       {
@@ -78,6 +82,7 @@ export function OptionsEditor({
   };
 
   const removeOption = (i: number) => {
+    if (disabled) return;
     const next = draft.filter((_, idx) => idx !== i);
     setDraft(next);
     save(next);
@@ -94,6 +99,7 @@ export function OptionsEditor({
             onChange={(e) => updateOption(i, "label", e.target.value)}
             onBlur={() => save()}
             className="text-sm h-8"
+            disabled={disabled}
           />
           <Input
             placeholder="Value"
@@ -101,19 +107,21 @@ export function OptionsEditor({
             onChange={(e) => updateOption(i, "value", e.target.value)}
             onBlur={() => save()}
             className="text-sm h-8 font-mono"
+            disabled={disabled}
           />
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={() => removeOption(i)}
+            disabled={disabled}
             className="text-red-600 h-8 w-8 p-0"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       ))}
-      <Button type="button" variant="outline" size="sm" onClick={addOption}>
+      <Button type="button" variant="outline" size="sm" onClick={addOption} disabled={disabled}>
         <Plus className="h-3.5 w-3.5 mr-1" />
         Add option
       </Button>

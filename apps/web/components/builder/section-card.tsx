@@ -212,6 +212,7 @@ export function SectionCard({
                 currentSectionId={section.id}
                 otherSections={otherSections}
                 layoutForMove={fullLayout}
+                disabled={disabled}
               />
             ))}
           </SortableContext>

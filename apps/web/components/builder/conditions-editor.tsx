@@ -75,7 +75,15 @@ function targetLabel(target: TargetSelection, form: FormShape): string {
   return `Section · ${sec?.title?.trim() || "Untitled section"}`;
 }
 
-export function ConditionsEditor({ field, form }: { field: Field; form: FormShape }) {
+export function ConditionsEditor({
+  field,
+  form,
+  disabled,
+}: {
+  field: Field;
+  form: FormShape;
+  disabled: boolean;
+}) {
   const utils = trpc.useUtils();
   const [adding, setAdding] = useState(false);
 
@@ -101,7 +109,7 @@ export function ConditionsEditor({ field, form }: { field: Field; form: FormShap
     <div className="mt-3 pt-3 border-t border-neutral-100 space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs uppercase tracking-wide text-neutral-500">Conditional logic</span>
-        {!adding && (
+        {!adding && !disabled && (
           <Button
             type="button"
             variant="ghost"
@@ -126,6 +134,7 @@ export function ConditionsEditor({ field, form }: { field: Field; form: FormShap
           onDelete={() => del.mutate({ conditionId: c.id })}
           updating={update.isPending && update.variables?.conditionId === c.id}
           deleting={del.isPending && del.variables?.conditionId === c.id}
+          disabled={disabled}
         />
       ))}
 
@@ -163,6 +172,7 @@ function ConditionRow({
   onDelete,
   updating,
   deleting,
+  disabled,
 }: {
   condition: Condition;
   form: FormShape;
@@ -178,6 +188,7 @@ function ConditionRow({
   onDelete: () => void;
   updating: boolean;
   deleting: boolean;
+  disabled: boolean;
 }) {
   const target = parseTarget(condition);
   const opDef = OPERATOR_OPTIONS.find((o) => o.value === condition.operator);
@@ -188,7 +199,7 @@ function ConditionRow({
       <select
         value={condition.operator}
         onChange={(e) => onUpdate({ operator: e.target.value as Operator })}
-        disabled={updating}
+        disabled={disabled || updating}
         className="border border-neutral-200 rounded px-1 h-6"
       >
         {OPERATOR_OPTIONS.map((o) => (
@@ -206,7 +217,7 @@ function ConditionRow({
             const next = e.target.value === "" ? null : e.target.value;
             if (next !== (condition.value ?? null)) onUpdate({ value: next });
           }}
-          disabled={updating}
+          disabled={disabled || updating}
           placeholder="value"
           className="border border-neutral-200 rounded px-1 h-6 w-24"
         />
@@ -217,7 +228,7 @@ function ConditionRow({
       <select
         value={condition.action}
         onChange={(e) => onUpdate({ action: e.target.value as Action })}
-        disabled={updating}
+        disabled={disabled || updating}
         className="border border-neutral-200 rounded px-1 h-6"
       >
         {ACTION_OPTIONS.map((a) => (
@@ -233,7 +244,7 @@ function ConditionRow({
           const next = parseTargetKey(e.target.value);
           onUpdate(serializeTarget(next));
         }}
-        disabled={updating}
+        disabled={disabled || updating}
         className="border border-neutral-200 rounded px-1 h-6 max-w-[12rem]"
       >
         <option value="" disabled>
@@ -262,7 +273,7 @@ function ConditionRow({
         variant="ghost"
         size="sm"
         onClick={onDelete}
-        disabled={deleting}
+        disabled={disabled || deleting}
         className="h-6 w-6 p-0 text-red-600 ml-auto"
         aria-label="Delete condition"
       >
