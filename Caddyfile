@@ -12,6 +12,7 @@
 		Permissions-Policy "interest-cohort=()"
 		-Server
 	}
+	reverse_proxy /trpc* api:8000
 	reverse_proxy web:3000
 }
 
