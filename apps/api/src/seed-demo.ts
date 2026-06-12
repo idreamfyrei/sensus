@@ -9,6 +9,7 @@ import {
   formSectionsTable,
   formFieldsTable,
   fieldOptionsTable,
+  fieldConditionsTable,
   responsesTable,
   responseAnswersTable,
   formViewsTable,
@@ -31,9 +32,27 @@ type DemoField = {
   maxLength?: number;
   min?: number;
   max?: number;
+  pattern?: string;
+  isInteger?: boolean;
+  includeTime?: boolean;
   maxRating?: number;
   minSelected?: number;
   maxSelected?: number;
+};
+type DemoSection = {
+  title?: string;
+  description?: string;
+  pageBreakBefore?: boolean;
+  showIntroScreen?: boolean;
+  fields: DemoField[];
+};
+type DemoCondition = {
+  sourceLabel: string;
+  operator: "eq" | "neq" | "contains" | "gt" | "lt" | "empty" | "not_empty";
+  value?: string | null;
+  action: "show" | "hide" | "require" | "jump_to";
+  targetLabel?: string;
+  targetSectionTitle?: string;
 };
 type DemoForm = {
   slug: string;
@@ -45,11 +64,378 @@ type DemoForm = {
   isTemplate: boolean;
   owner: "admin" | "guest";
   fields: DemoField[];
+  sections?: DemoSection[];
+  conditions?: DemoCondition[];
   responses: Array<Array<string | string[] | number | null>>;
   viewCount: number;
 };
 
 const DEMO_FORMS: DemoForm[] = [
+  {
+    slug: "sensus-feature-showcase",
+    title: "Sensus feature showcase",
+    description:
+      "A full-system QA form with every field type, validation controls, sections, intros, page breaks, and conditional logic.",
+    themeKey: "brutalist",
+    visibility: "public",
+    layout: "one_per_screen",
+    isTemplate: true,
+    owner: "admin",
+    fields: [],
+    sections: [
+      {
+        title: "Identity and contact",
+        description: "Basic respondent details plus text validation.",
+        showIntroScreen: true,
+        fields: [
+          {
+            type: "short_text",
+            label: "Display name",
+            required: true,
+            placeholder: "Ada Lovelace",
+            minLength: 2,
+            maxLength: 80,
+          },
+          {
+            type: "email",
+            label: "Work email",
+            required: true,
+            placeholder: "ada@example.com",
+          },
+          {
+            type: "long_text",
+            label: "Project context",
+            required: true,
+            placeholder: "Tell us what you are trying to collect.",
+            minLength: 10,
+            maxLength: 500,
+          },
+        ],
+      },
+      {
+        title: "Choices and scoring",
+        description: "Option fields, numeric limits, ratings, and a confirmation checkbox.",
+        pageBreakBefore: true,
+        showIntroScreen: true,
+        fields: [
+          {
+            type: "single_select",
+            label: "Primary use case",
+            required: true,
+            options: [
+              { label: "Feedback", value: "feedback" },
+              { label: "Registration", value: "registration" },
+              { label: "Research", value: "research" },
+              { label: "Internal ops", value: "ops" },
+            ],
+          },
+          {
+            type: "multi_select",
+            label: "Features to test",
+            required: true,
+            minSelected: 2,
+            maxSelected: 4,
+            options: [
+              { label: "Analytics", value: "analytics" },
+              { label: "Conditional logic", value: "logic" },
+              { label: "Themes", value: "themes" },
+              { label: "Responses", value: "responses" },
+              { label: "Validation", value: "validation" },
+            ],
+          },
+          {
+            type: "dropdown",
+            label: "Launch urgency",
+            required: true,
+            options: [
+              { label: "This week", value: "week" },
+              { label: "This month", value: "month" },
+              { label: "Later", value: "later" },
+            ],
+          },
+          {
+            type: "number",
+            label: "Expected responses",
+            required: true,
+            min: 1,
+            max: 10000,
+            isInteger: true,
+          },
+          {
+            type: "rating",
+            label: "Builder experience",
+            required: true,
+            maxRating: 10,
+          },
+          {
+            type: "checkbox",
+            label: "I want to test conditional logic",
+            required: false,
+          },
+        ],
+      },
+      {
+        title: "Scheduling and conditional follow-up",
+        description: "Date input plus fields controlled by conditional rules.",
+        pageBreakBefore: true,
+        showIntroScreen: true,
+        fields: [
+          {
+            type: "date",
+            label: "Preferred review date",
+            required: true,
+            includeTime: false,
+          },
+          {
+            type: "long_text",
+            label: "Logic test notes",
+            description: "Shown when the conditional-logic checkbox is checked.",
+            placeholder: "Describe the branch you expected to see.",
+            maxLength: 300,
+          },
+          {
+            type: "email",
+            label: "Urgent contact email",
+            description: "Required when launch urgency is this week.",
+            placeholder: "owner@example.com",
+          },
+          {
+            type: "long_text",
+            label: "Low rating follow-up",
+            description: "Shown when builder experience is under 7.",
+            placeholder: "What should be improved first?",
+            maxLength: 300,
+          },
+          {
+            type: "long_text",
+            label: "Non-later launch note",
+            description: "Hidden when launch urgency is Later.",
+            placeholder: "Anything time-sensitive we should know?",
+            maxLength: 300,
+          },
+        ],
+      },
+    ],
+    conditions: [
+      {
+        sourceLabel: "I want to test conditional logic",
+        operator: "eq",
+        value: "true",
+        action: "show",
+        targetLabel: "Logic test notes",
+      },
+      {
+        sourceLabel: "Launch urgency",
+        operator: "eq",
+        value: "week",
+        action: "require",
+        targetLabel: "Urgent contact email",
+      },
+      {
+        sourceLabel: "Builder experience",
+        operator: "lt",
+        value: "7",
+        action: "show",
+        targetLabel: "Low rating follow-up",
+      },
+      {
+        sourceLabel: "Launch urgency",
+        operator: "eq",
+        value: "later",
+        action: "hide",
+        targetLabel: "Non-later launch note",
+      },
+      {
+        sourceLabel: "Primary use case",
+        operator: "eq",
+        value: "research",
+        action: "jump_to",
+        targetSectionTitle: "Scheduling and conditional follow-up",
+      },
+    ],
+    responses: [
+      [
+        "Saumya",
+        "saumya@example.com",
+        "Testing every implemented Sensus field and branch.",
+        "feedback",
+        ["analytics", "logic", "themes"],
+        "week",
+        250,
+        9,
+        "true",
+        "2026-06-20",
+        "The notes field appeared after checking the box.",
+        "owner@example.com",
+        null,
+        "We are launching this week, so timing matters.",
+      ],
+      [
+        "Mira",
+        "mira@example.com",
+        "Checking validations, options, and a low rating branch.",
+        "ops",
+        ["responses", "validation"],
+        "month",
+        80,
+        5,
+        "false",
+        "2026-07-02",
+        null,
+        null,
+        "The field editor could explain rules more clearly.",
+        "Monthly launch, no special rush.",
+      ],
+      [
+        "Arjun",
+        "arjun@example.com",
+        "Using the showcase as a template before publishing.",
+        "research",
+        ["logic", "responses", "validation", "analytics"],
+        "later",
+        1200,
+        8,
+        "true",
+        "2026-07-15",
+        "Jump-to-section behavior is the main branch to verify.",
+        null,
+        null,
+        null,
+      ],
+    ],
+    viewCount: 64,
+  },
+
+  {
+    slug: "chai-code-sensus-feedback",
+    title: "Chai Code Sensus feedback",
+    description:
+      "A cheerful judge-facing form about whether Sensus fits the purpose, how the builder felt, and how fun the cohort learning experience has been.",
+    themeKey: "vaporwave",
+    visibility: "public",
+    layout: "one_per_screen",
+    isTemplate: true,
+    owner: "admin",
+    fields: [
+      {
+        type: "short_text",
+        label: "What should we call you?",
+        required: true,
+        placeholder: "Your name",
+        maxLength: 80,
+      },
+      {
+        type: "single_select",
+        label: "Does this form fill the purpose?",
+        required: true,
+        options: [
+          { label: "Yes, it feels clear and useful", value: "clear-useful" },
+          { label: "Yes, it gets the idea across quickly", value: "quickly-clear" },
+          { label: "Yes, it is demo-ready and judge-friendly", value: "judge-friendly" },
+          { label: "Yes, it made me smile while testing", value: "made-me-smile" },
+        ],
+      },
+      {
+        type: "rating",
+        label: "How was the form building experience?",
+        required: true,
+        maxRating: 5,
+      },
+      {
+        type: "multi_select",
+        label: "What felt fun while building with Sensus?",
+        required: true,
+        minSelected: 2,
+        maxSelected: 4,
+        options: [
+          { label: "Creating questions felt smooth", value: "smooth-questions" },
+          { label: "Themes made the form feel alive", value: "themes-alive" },
+          { label: "The preview made iteration easy", value: "easy-preview" },
+          { label: "Conditional logic felt satisfying", value: "logic-satisfying" },
+          { label: "Publishing a shareable link felt great", value: "share-link" },
+        ],
+      },
+      {
+        type: "single_select",
+        label: "Are you enjoying the Chai Code cohort?",
+        required: true,
+        options: [
+          { label: "Absolutely, the cohort energy is amazing", value: "amazing-energy" },
+          { label: "Yes, learning with everyone feels motivating", value: "motivating" },
+          { label: "Yes, it feels like building with friends", value: "building-with-friends" },
+          { label: "Yes, the chai plus code combo is elite", value: "chai-code-elite" },
+        ],
+      },
+      {
+        type: "dropdown",
+        label: "How has the learning experience felt?",
+        required: true,
+        options: [
+          { label: "Fun and practical", value: "fun-practical" },
+          { label: "Hands-on and confidence-building", value: "confidence-building" },
+          { label: "Challenging in the best way", value: "best-challenge" },
+          { label: "Full of tiny wins", value: "tiny-wins" },
+        ],
+      },
+      {
+        type: "long_text",
+        label: "One happy note for the judges",
+        required: true,
+        placeholder: "Sensus helped me turn the idea into something I can actually share.",
+        minLength: 10,
+        maxLength: 400,
+      },
+      {
+        type: "checkbox",
+        label: "I would happily show this form in the final demo",
+        required: true,
+      },
+    ],
+    responses: [
+      [
+        "Saumya",
+        "judge-friendly",
+        5,
+        ["smooth-questions", "themes-alive", "easy-preview", "share-link"],
+        "chai-code-elite",
+        "fun-practical",
+        "Sensus made the form-building flow feel playful, useful, and polished enough to show judges.",
+        true,
+      ],
+      [
+        "A Chai Code buddy",
+        "quickly-clear",
+        5,
+        ["smooth-questions", "logic-satisfying", "share-link"],
+        "building-with-friends",
+        "confidence-building",
+        "The project feels like a real product, and the learning journey has been genuinely fun.",
+        true,
+      ],
+      [
+        "Demo reviewer",
+        "clear-useful",
+        4,
+        ["themes-alive", "easy-preview", "logic-satisfying"],
+        "motivating",
+        "tiny-wins",
+        "The form explains the purpose clearly and keeps the tone positive from start to finish.",
+        true,
+      ],
+      [
+        "Future user",
+        "made-me-smile",
+        5,
+        ["smooth-questions", "themes-alive", "share-link"],
+        "amazing-energy",
+        "best-challenge",
+        "It feels friendly, fast, and ready for a cohort project showcase.",
+        true,
+      ],
+    ],
+    viewCount: 108,
+  },
+
   {
     slug: "year-end-favorites",
     title: "Year-end favorites",
@@ -470,48 +856,103 @@ async function seedOneForm(args: {
     .returning();
   if (!insertedForm) throw new Error(`failed to insert form ${slug}`);
 
-  const [section] = await db
-    .insert(formSectionsTable)
-    .values({ formId: insertedForm.id, order: 0 })
-    .returning();
-  if (!section) throw new Error(`failed to insert section for ${slug}`);
+  const sections =
+    form.sections && form.sections.length > 0
+      ? form.sections
+      : [{ fields: form.fields } satisfies DemoSection];
 
   const insertedFieldIds: string[] = [];
-  for (let i = 0; i < form.fields.length; i++) {
-    const f = form.fields[i]!;
-    const [row] = await db
-      .insert(formFieldsTable)
+  const fieldIdByLabel = new Map<string, string>();
+  const sectionIdByTitle = new Map<string, string>();
+
+  for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+    const sectionDef = sections[sectionIndex]!;
+    const [section] = await db
+      .insert(formSectionsTable)
       .values({
         formId: insertedForm.id,
-        sectionId: section.id,
-        type: f.type,
-        label: f.label,
-        description: f.description ?? null,
-        placeholder: f.placeholder ?? null,
-        required: f.required ?? false,
-        order: i,
-        minLength: f.minLength ?? null,
-        maxLength: f.maxLength ?? null,
-        min: f.min ?? null,
-        max: f.max ?? null,
-        maxRating: f.maxRating ?? null,
-        minSelected: f.minSelected ?? null,
-        maxSelected: f.maxSelected ?? null,
+        order: sectionIndex,
+        title: sectionDef.title ?? null,
+        description: sectionDef.description ?? null,
+        pageBreakBefore: sectionDef.pageBreakBefore ?? false,
+        showIntroScreen: sectionDef.showIntroScreen ?? false,
       })
       .returning();
-    if (!row) throw new Error(`field insert failed for ${slug}`);
-    insertedFieldIds.push(row.id);
+    if (!section) throw new Error(`failed to insert section for ${slug}`);
+    if (sectionDef.title) sectionIdByTitle.set(sectionDef.title, section.id);
 
-    if (f.options && f.options.length > 0) {
-      await db.insert(fieldOptionsTable).values(
-        f.options.map((opt, idx) => ({
-          fieldId: row.id,
-          label: opt.label,
-          value: opt.value,
-          order: idx,
-        })),
-      );
+    for (let fieldIndex = 0; fieldIndex < sectionDef.fields.length; fieldIndex++) {
+      const f = sectionDef.fields[fieldIndex]!;
+      const [row] = await db
+        .insert(formFieldsTable)
+        .values({
+          formId: insertedForm.id,
+          sectionId: section.id,
+          type: f.type,
+          label: f.label,
+          description: f.description ?? null,
+          placeholder: f.placeholder ?? null,
+          required: f.required ?? false,
+          order: fieldIndex,
+          minLength: f.minLength ?? null,
+          maxLength: f.maxLength ?? null,
+          min: f.min ?? null,
+          max: f.max ?? null,
+          pattern: f.pattern ?? null,
+          isInteger: f.isInteger ?? null,
+          includeTime: f.includeTime ?? null,
+          maxRating: f.maxRating ?? null,
+          minSelected: f.minSelected ?? null,
+          maxSelected: f.maxSelected ?? null,
+        })
+        .returning();
+      if (!row) throw new Error(`field insert failed for ${slug}`);
+      insertedFieldIds.push(row.id);
+      fieldIdByLabel.set(f.label, row.id);
+
+      if (f.options && f.options.length > 0) {
+        await db.insert(fieldOptionsTable).values(
+          f.options.map((opt, idx) => ({
+            fieldId: row.id,
+            label: opt.label,
+            value: opt.value,
+            order: idx,
+          })),
+        );
+      }
     }
+  }
+
+  if (form.conditions && form.conditions.length > 0) {
+    await db.insert(fieldConditionsTable).values(
+      form.conditions.map((condition) => {
+        const sourceFieldId = fieldIdByLabel.get(condition.sourceLabel);
+        if (!sourceFieldId) throw new Error(`condition source not found: ${condition.sourceLabel}`);
+
+        const targetFieldId = condition.targetLabel
+          ? fieldIdByLabel.get(condition.targetLabel)
+          : undefined;
+        const targetSectionId = condition.targetSectionTitle
+          ? sectionIdByTitle.get(condition.targetSectionTitle)
+          : undefined;
+
+        if (!targetFieldId && !targetSectionId) {
+          throw new Error(
+            `condition target not found: ${condition.targetLabel ?? condition.targetSectionTitle}`,
+          );
+        }
+
+        return {
+          formId: insertedForm.id,
+          sourceFieldId,
+          operator: condition.operator,
+          value: condition.value ?? null,
+          action: condition.action,
+          targetFieldId: targetFieldId ?? null,
+          targetSectionId: targetSectionId ?? null,
+        };
+      }),
+    );
   }
 
   for (const responseRow of form.responses) {
