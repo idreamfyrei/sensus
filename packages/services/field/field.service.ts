@@ -15,6 +15,11 @@ import { FormForbiddenError, FormNotFoundError, FormSchemaLockedError } from "..
 type Field = typeof formFieldsTable.$inferSelect;
 type FieldOption = typeof fieldOptionsTable.$inferSelect;
 
+const DEFAULT_FIELD_OPTIONS = [
+  { label: "Option 1", value: "option-1" },
+  { label: "Option 2", value: "option-2" },
+];
+
 export class FieldNotFoundError extends Error {
   readonly code = "FIELD_NOT_FOUND" as const;
   constructor() {
@@ -104,6 +109,16 @@ export class FieldService {
         })
         .returning();
       if (!row) throw new Error("FieldService.addField: insert returned nothing");
+      if (FIELD_TYPES_CATALOG[args.type].hasOptions) {
+        await tx.insert(fieldOptionsTable).values(
+          DEFAULT_FIELD_OPTIONS.map((option, order) => ({
+            fieldId: row.id,
+            label: option.label,
+            value: option.value,
+            order,
+          })),
+        );
+      }
       await this.bumpVersion(tx, args.formId);
       logger.info("field added", { fieldId: row.id, formId: args.formId, type: args.type });
       return row;

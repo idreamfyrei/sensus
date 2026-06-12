@@ -118,6 +118,27 @@ describe("FieldService.addField", () => {
     expect(refreshed?.version).toBe(3); // 1 (initial) + 2 mutations
   });
 
+  it("seeds default options for option-backed fields", async () => {
+    const { form, section } = await makeDraftForm(USER_A.id);
+
+    for (const type of ["single_select", "multi_select", "dropdown"] as const) {
+      const f = await fieldSvc.addField({
+        formId: form.id,
+        userId: USER_A.id,
+        sectionId: section.id,
+        type,
+        label: "Pick",
+      });
+
+      const options = await db
+        .select()
+        .from(fieldOptionsTable)
+        .where(eq(fieldOptionsTable.fieldId, f.id));
+
+      expect(options.map((o) => o.value)).toEqual(["option-1", "option-2"]);
+    }
+  });
+
   it("rejects non-owner", async () => {
     const { form, section } = await makeDraftForm(USER_A.id);
     await expect(
@@ -251,13 +272,14 @@ describe("FieldService.setOptions", () => {
 describe("FormService.publish gate", () => {
   it("rejects publish when a select-style field has no options", async () => {
     const { form, section } = await makeDraftForm(USER_A.id);
-    await fieldSvc.addField({
+    const field = await fieldSvc.addField({
       formId: form.id,
       userId: USER_A.id,
       sectionId: section.id,
       type: "single_select",
       label: "Pick",
     });
+    await fieldSvc.setOptions({ fieldId: field.id, userId: USER_A.id, options: [] });
 
     const fresh = await formSvc.getById({ id: form.id, userId: USER_A.id });
     await expect(
