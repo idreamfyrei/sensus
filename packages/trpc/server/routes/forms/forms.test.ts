@@ -127,7 +127,7 @@ describe("forms.list", () => {
     await caller.forms.create({ title: "Mine 1", themeId });
     await caller.forms.create({ title: "Mine 2", themeId });
 
-    const forms = await caller.forms.list();
+    const forms = (await caller.forms.list()) as Array<{ userId: string }>;
     expect(forms).toHaveLength(2);
     expect(forms.every((f) => f.userId === TEST_USER.id)).toBe(true);
   });
@@ -234,9 +234,9 @@ describe("themes.list", () => {
     const anon = serverRouter.createCaller(makeCtx(null));
     const themes = await anon.themes.list();
     expect(themes).toHaveLength(10);
-    expect(themes.map((t) => t.key)).toContain("pixel");
-    expect(themes.map((t) => t.key)).toContain("anime");
-    expect(themes.map((t) => t.key)).not.toContain("default");
+    expect(themes.map((t: { key: string }) => t.key)).toContain("pixel");
+    expect(themes.map((t: { key: string }) => t.key)).toContain("anime");
+    expect(themes.map((t: { key: string }) => t.key)).not.toContain("default");
   });
 });
 
@@ -348,7 +348,9 @@ describe("sections router", () => {
       orderedIds: [third.id, firstSectionId, second.id],
     });
 
-    const after = await caller.forms.get({ id: form.id });
+    const after = (await caller.forms.get({ id: form.id })) as {
+      sections: Array<{ id: string; fields: Array<{ id: string }> }>;
+    };
     expect(after.sections.map((s) => s.id)).toEqual([third.id, firstSectionId, second.id]);
 
     await caller.sections.delete({ sectionId: third.id });
@@ -412,7 +414,9 @@ describe("fields.reorderAll", () => {
       ],
     });
 
-    const after = await caller.forms.get({ id: form.id });
+    const after = (await caller.forms.get({ id: form.id })) as {
+      sections: Array<{ id: string; fields: Array<{ id: string }> }>;
+    };
     const bySection = new Map(after.sections.map((s) => [s.id, s]));
     expect(bySection.get(first)?.fields.map((f) => f.id)).toEqual([f2.id]);
     expect(bySection.get(second.id)?.fields.map((f) => f.id)).toEqual([f1.id]);

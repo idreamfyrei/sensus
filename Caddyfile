@@ -2,7 +2,8 @@
 	email {$ADMIN_EMAIL}
 }
 
-app.{$DOMAIN} {
+# Web app: the subdomain itself
+{$APP_HOST} {
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -14,7 +15,8 @@ app.{$DOMAIN} {
 	reverse_proxy web:3000
 }
 
-api.{$DOMAIN} {
+# API on its own subdomain
+{$API_HOST} {
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
@@ -23,8 +25,4 @@ api.{$DOMAIN} {
 		-Server
 	}
 	reverse_proxy api:8000
-}
-
-{$DOMAIN} {
-	redir https://app.{$DOMAIN}{uri} permanent
 }

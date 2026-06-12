@@ -73,6 +73,10 @@ services:
     depends_on:
       - api
       - web
+    environment:
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL (for Let's Encrypt)}
+      APP_HOST: ${APP_HOST:?set APP_HOST (e.g. sensus.your-domain.com)}
+      API_HOST: ${API_HOST:?set API_HOST (e.g. api.sensus.your-domain.com)}
     ports:
       - "80:80"
       - "443:443"
